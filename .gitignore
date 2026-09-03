@@ -8,16 +8,14 @@ pnpm-debug.log*
 lerna-debug.log*
 
 # Dependencies & Build outputs
-node_modules
-dist
-dist-ssr
-.output
-.vinxi
-.tanstack/**
-.nitro
-.vercel
-uploads/*
-!uploads/.gitkeep
+node_modules/
+dist/
+dist-ssr/
+.output/
+.vinxi/
+.tanstack/
+.nitro/
+.vercel/
 
 # Environment variables
 .env
@@ -25,18 +23,13 @@ uploads/*
 !.env.example
 *.local
 
-# Wrangler / Cloudflare
-.wrangler/
-.dev.vars
-
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
-
