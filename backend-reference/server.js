@@ -21,6 +21,13 @@ app.use("/api/buildings", buildingRoutes);
 app.use("/api/search", searchRoutes);
 
 const PORT = process.env.PORT || 5000;
-connectDB().then(() => {
-  app.listen(PORT, () => console.log(`API running on http://localhost:${PORT}`));
-});
+if (process.env.NODE_ENV !== "test" && !process.env.VERCEL) {
+  connectDB().then(() => {
+    app.listen(PORT, () => console.log(`API running on http://localhost:${PORT}`));
+  });
+} else {
+  connectDB();
+}
+
+export default app;
+
