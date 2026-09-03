@@ -3,10 +3,10 @@ import { n as require_jsx_runtime } from "../_libs/radix-ui__react-context+react
 import { n as require_react } from "../_libs/@radix-ui/react-compose-refs+[...].mjs";
 import { I as Lock, N as Mail, i as User, q as Compass } from "../_libs/lucide-react.mjs";
 import { v as Link, y as useNavigate } from "../_libs/@tanstack/react-router+[...].mjs";
-import { o as useAuth } from "./router-CMaMXinN.mjs";
+import { o as useAuth } from "./router--Sg3DtRc.mjs";
 import { c as register } from "./api-upx-0QUe.mjs";
-import { n as GoogleSignInButton, t as AuthDivider } from "./google-signin-cmUdn40p.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/register-OASuc5vu.js
+import { n as GoogleSignInButton, t as AuthDivider } from "./google-signin-DosolT7f.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/register-BNLQQ0eL.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 function RegisterPage() {

@@ -8,8 +8,8 @@ import { n as createMemoryHistory } from "../_libs/tanstack__history.mjs";
 import { a as getOrigin, c as createSerializationAdapter, d as toCrossJSONAsync, f as toCrossJSONStream, i as getNormalizedURL, l as makeSerovalPlugin, n as mergeHeaders, o as defaultSerovalPlugins, r as attachRouterServerSsrUtils, s as createRawStreamRPCPlugin, t as waitForRequest, u as fromJSON } from "../_libs/@tanstack/router-core+[...].mjs";
 import { t as createMiddleware } from "./createMiddleware-B_4t7rW1.mjs";
 import { AsyncLocalStorage } from "node:async_hooks";
-//#region node_modules/.nitro/vite/services/ssr/assets/server-BFRsKcKu.js
-var server_BFRsKcKu_exports = /* @__PURE__ */ __exportAll({
+//#region node_modules/.nitro/vite/services/ssr/assets/server-DtYuMhH8.js
+var server_DtYuMhH8_exports = /* @__PURE__ */ __exportAll({
 	createServerEntry: () => createServerEntry,
 	default: () => server_default,
 	i: () => getServerFnById,
@@ -92,7 +92,7 @@ var HEADERS = { TSS_SHELL: "X-TSS_SHELL" };
 * the dev styles URL for route-scoped CSS collection.
 */
 async function getStartManifest(matchedRoutes) {
-	const { tsrStartManifest } = await import("../_tanstack-start-manifest_v-DYetryT9.mjs");
+	const { tsrStartManifest } = await import("../_tanstack-start-manifest_v-Cs1JVuGm.mjs");
 	const startManifest = tsrStartManifest();
 	let routes = startManifest.routes;
 	routes[rootRouteId];
@@ -114,15 +114,15 @@ async function getStartManifest(matchedRoutes) {
 var manifest = {
 	"0b851254e11eb17acd8365aa10619d33fc2060cab3764176b2062ba7e81c335a": {
 		functionName: "getAISuggestions_createServerFn_handler",
-		importer: () => import("./ai.functions-BZuBYuMN.mjs")
+		importer: () => import("./ai.functions-Dn87FmdH.mjs")
 	},
 	"3ad2ea78df4e70dbd3084576a044dfe2cf31656dfc100962c9bd826f796fa432": {
 		functionName: "getAIRecommendations_createServerFn_handler",
-		importer: () => import("./ai.functions-BZuBYuMN.mjs")
+		importer: () => import("./ai.functions-Dn87FmdH.mjs")
 	},
 	"98f4c1ec5adcb96ffa660ce6f8dbfe568b087c78707c43f7c8bb57f3e1fa1ae3": {
 		functionName: "computeRoute_createServerFn_handler",
-		importer: () => import("./routing.functions-CXUXUCSz.mjs")
+		importer: () => import("./routing.functions-DbtaYkoK.mjs")
 	}
 };
 async function getServerFnById(id, access) {
@@ -1366,7 +1366,7 @@ var getBaseManifest = getProdBaseManifest;
 var createEarlyHintsForRequest = createEarlyHintsCollector;
 async function loadEntries() {
 	const [routerEntry, startEntry, pluginAdapters] = await Promise.all([
-		import("./router-CMaMXinN.mjs").then((n) => n.t),
+		import("./router--Sg3DtRc.mjs").then((n) => n.t),
 		import("./start-BcSBlhe9.mjs"),
 		import("./empty-plugin-adapters-D9UWiqvJ.mjs")
 	]);
@@ -1816,4 +1816,4 @@ function createServerEntry(entry) {
 }
 var server_default = createServerEntry({ fetch });
 //#endregion
-export { server_BFRsKcKu_exports as i, createServerFn as n, getServerFnById as r, TSS_SERVER_FUNCTION as t };
+export { server_DtYuMhH8_exports as i, createServerFn as n, getServerFnById as r, TSS_SERVER_FUNCTION as t };

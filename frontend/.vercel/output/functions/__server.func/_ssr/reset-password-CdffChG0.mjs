@@ -3,9 +3,9 @@ import { n as require_jsx_runtime } from "../_libs/radix-ui__react-context+react
 import { n as require_react } from "../_libs/@radix-ui/react-compose-refs+[...].mjs";
 import { I as Lock, it as ArrowLeft, q as Compass } from "../_libs/lucide-react.mjs";
 import { v as Link, y as useNavigate } from "../_libs/@tanstack/react-router+[...].mjs";
-import { i as Route$6 } from "./router-CMaMXinN.mjs";
+import { i as Route$6 } from "./router--Sg3DtRc.mjs";
 import { u as resetPassword } from "./api-upx-0QUe.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/reset-password-SC6xP-rc.js
+//#region node_modules/.nitro/vite/services/ssr/assets/reset-password-CdffChG0.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 function ResetPasswordPage() {

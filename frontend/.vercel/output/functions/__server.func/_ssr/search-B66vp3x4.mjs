@@ -3,12 +3,12 @@ import { n as require_jsx_runtime } from "../_libs/radix-ui__react-context+react
 import { n as require_react } from "../_libs/@radix-ui/react-compose-refs+[...].mjs";
 import { D as Mic, O as MicOff, R as LoaderCircle, f as Sparkles, v as Search, x as QrCode } from "../_libs/lucide-react.mjs";
 import { v as Link } from "../_libs/@tanstack/react-router+[...].mjs";
-import { r as Route$4 } from "./router-CMaMXinN.mjs";
+import { r as Route$4 } from "./router--Sg3DtRc.mjs";
 import { a as getBuildings } from "./api-upx-0QUe.mjs";
-import { n as useServerFn } from "./createSsrRpc-BDcSRTph.mjs";
+import { n as useServerFn } from "./createSsrRpc-CqEh_Aij.mjs";
 import { t as BuildingCard } from "./building-card-CLvDw1H-.mjs";
-import { n as getAISuggestions } from "./ai.functions-Cn0JQV0r.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/search-ClKL5XxV.js
+import { n as getAISuggestions } from "./ai.functions-D82dI9Xv.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/search-B66vp3x4.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 function isVoiceSupported() {

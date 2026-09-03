@@ -4,15 +4,15 @@ import { n as require_react } from "../_libs/@radix-ui/react-compose-refs+[...].
 import { E as Navigation, G as Database, J as Clock, L as LocateFixed, M as MapPin, Q as Car, R as LoaderCircle, U as Footprints, X as Check, Z as ChartColumn, at as ArrowDown, b as RotateCcwClock, d as StarOff, g as Settings2, h as Share2, l as Sunrise, n as WifiOff, nt as ArrowUp, o as TriangleAlert, rt as ArrowRight, s as Trash2, t as X, tt as Bike, u as Star, v as Search, w as Pencil, y as Route } from "../_libs/lucide-react.mjs";
 import { a as DialogOverlay$1, i as DialogDescription$1, n as DialogClose, o as DialogPortal$1, r as DialogContent$1, s as DialogTitle$1, t as Dialog$1 } from "../_libs/@radix-ui/react-dialog+[...].mjs";
 import { St as object, lt as _enum, xt as number } from "../_libs/@ai-sdk/gateway+[...].mjs";
-import { a as Route$8 } from "./router-CMaMXinN.mjs";
+import { a as Route$8 } from "./router--Sg3DtRc.mjs";
 import { a as getBuildings } from "./api-upx-0QUe.mjs";
-import { n as createServerFn } from "./server-BFRsKcKu.mjs";
+import { n as createServerFn } from "./server-DtYuMhH8.mjs";
 import { a as moveFavoriteTo, c as setFavoriteAlias, l as toggleFavorite, n as getFavoriteAliases, r as getFavorites, s as removeFavorite, t as addFavorites } from "./favorites-D3aR_5-0.mjs";
 import { t as CampusMap } from "./campus-map-C37GgseY.mjs";
-import { n as useServerFn, t as createSsrRpc } from "./createSsrRpc-BDcSRTph.mjs";
+import { n as useServerFn, t as createSsrRpc } from "./createSsrRpc-CqEh_Aij.mjs";
 import { t as clsx } from "../_libs/clsx.mjs";
 import { t as twMerge } from "../_libs/tailwind-merge.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/navigate-DiTv4-Ij.js
+//#region node_modules/.nitro/vite/services/ssr/assets/navigate-DwZtHife.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 function cn(...inputs) {

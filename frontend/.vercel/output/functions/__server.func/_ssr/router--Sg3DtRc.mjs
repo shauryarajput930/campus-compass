@@ -9,7 +9,7 @@ import { t as number } from "../_libs/zod.mjs";
 import { t as QueryClient } from "../_libs/tanstack__query-core.mjs";
 import { t as QueryClientProvider } from "../_libs/tanstack__react-query.mjs";
 import { n as MotionConfig, r as AnimatePresence, t as motion } from "../_libs/framer-motion.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/router-CMaMXinN.js
+//#region node_modules/.nitro/vite/services/ssr/assets/router--Sg3DtRc.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 var styles_default = "/assets/styles-D3lc8e8m.css";
@@ -530,7 +530,7 @@ var Route$14 = createFileRoute("/contact")({
 	}] }),
 	component: lazyRouteComponent($$splitComponentImporter$13, "component")
 });
-var $$splitComponentImporter$12 = () => import("./dashboard-gEzOjiaB.mjs");
+var $$splitComponentImporter$12 = () => import("./dashboard-Chyi70BA.mjs");
 var Route$13 = createFileRoute("/dashboard")({
 	head: () => ({ meta: [{ title: "Dashboard — Campus Compass" }] }),
 	component: lazyRouteComponent($$splitComponentImporter$12, "component")
@@ -567,7 +567,7 @@ var Route$11 = createFileRoute("/forgot-password")({
 	] }),
 	component: lazyRouteComponent($$splitComponentImporter$10, "component")
 });
-var $$splitComponentImporter$9 = () => import("./login-olQRXRRE.mjs");
+var $$splitComponentImporter$9 = () => import("./login-Btb0RKYi.mjs");
 var Route$10 = createFileRoute("/login")({
 	head: () => ({ meta: [{ title: "Sign in — Campus Compass" }] }),
 	component: lazyRouteComponent($$splitComponentImporter$9, "component")
@@ -580,7 +580,7 @@ var Route$9 = createFileRoute("/map")({
 	}] }),
 	component: lazyRouteComponent($$splitComponentImporter$8, "component")
 });
-var $$splitComponentImporter$7 = () => import("./navigate-DiTv4-Ij.mjs");
+var $$splitComponentImporter$7 = () => import("./navigate-DwZtHife.mjs");
 var search = object({
 	from: string().optional().catch(""),
 	to: string().optional().catch(""),
@@ -597,12 +597,12 @@ var Route$8 = createFileRoute("/navigate")({
 	head: () => ({ meta: [{ title: "Get directions — Campus Compass" }] }),
 	component: lazyRouteComponent($$splitComponentImporter$7, "component")
 });
-var $$splitComponentImporter$6 = () => import("./register-OASuc5vu.mjs");
+var $$splitComponentImporter$6 = () => import("./register-BNLQQ0eL.mjs");
 var Route$7 = createFileRoute("/register")({
 	head: () => ({ meta: [{ title: "Create account — Campus Compass" }] }),
 	component: lazyRouteComponent($$splitComponentImporter$6, "component")
 });
-var $$splitComponentImporter$5 = () => import("./reset-password-SC6xP-rc.mjs");
+var $$splitComponentImporter$5 = () => import("./reset-password-CdffChG0.mjs");
 var Route$6 = createFileRoute("/reset-password")({
 	validateSearch: (search) => ({ token: typeof search.token === "string" ? search.token : void 0 }),
 	head: () => ({ meta: [
@@ -638,25 +638,25 @@ var Route$5 = createFileRoute("/scan")({
 	}] }),
 	component: lazyRouteComponent($$splitComponentImporter$4, "component")
 });
-var $$splitComponentImporter$3 = () => import("./search-ClKL5XxV.mjs");
+var $$splitComponentImporter$3 = () => import("./search-B66vp3x4.mjs");
 var searchSchema = object({ q: string().optional().catch("") });
 var Route$4 = createFileRoute("/search")({
 	validateSearch: searchSchema,
 	head: () => ({ meta: [{ title: "Search — Campus Compass" }] }),
 	component: lazyRouteComponent($$splitComponentImporter$3, "component")
 });
-var $$splitComponentImporter$2 = () => import("./admin.index-oxU7TQR1.mjs");
+var $$splitComponentImporter$2 = () => import("./admin.index-DXyWzd7Q.mjs");
 var Route$3 = createFileRoute("/admin/")({
 	head: () => ({ meta: [{ title: "Admin login — Campus Compass" }] }),
 	component: lazyRouteComponent($$splitComponentImporter$2, "component")
 });
-var $$splitComponentImporter$1 = () => import("./admin.dashboard-Dwxy8Nvy.mjs");
+var $$splitComponentImporter$1 = () => import("./admin.dashboard-Dh65KO3U.mjs");
 var Route$2 = createFileRoute("/admin/dashboard")({
 	head: () => ({ meta: [{ title: "Admin dashboard — Campus Compass" }] }),
 	component: lazyRouteComponent($$splitComponentImporter$1, "component")
 });
 var $$splitNotFoundComponentImporter = () => import("./buildings._id-BcUebcsK.mjs");
-var $$splitComponentImporter = () => import("./buildings._id-BGV82rDJ.mjs");
+var $$splitComponentImporter = () => import("./buildings._id-Ds6186et.mjs");
 var Route$1 = createFileRoute("/buildings/$id")({
 	head: () => ({ meta: [{ title: "Building details — Campus Compass" }] }),
 	component: lazyRouteComponent($$splitComponentImporter, "component"),

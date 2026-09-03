@@ -3,9 +3,9 @@ import { n as require_jsx_runtime } from "../_libs/radix-ui__react-context+react
 import { n as require_react } from "../_libs/@radix-ui/react-compose-refs+[...].mjs";
 import { B as Layers, P as LogOut, S as Plus, T as PenLine, a as Upload, et as Building2, p as ShieldCheck, r as Users, s as Trash2, t as X, v as Search } from "../_libs/lucide-react.mjs";
 import { v as Link, y as useNavigate } from "../_libs/@tanstack/react-router+[...].mjs";
-import { o as useAuth } from "./router-CMaMXinN.mjs";
+import { o as useAuth } from "./router--Sg3DtRc.mjs";
 import { a as getBuildings, f as updateBuilding, n as deleteBuilding, r as departments, t as createBuilding } from "./api-upx-0QUe.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/admin.dashboard-Dwxy8Nvy.js
+//#region node_modules/.nitro/vite/services/ssr/assets/admin.dashboard-Dh65KO3U.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 function AdminDashboard() {

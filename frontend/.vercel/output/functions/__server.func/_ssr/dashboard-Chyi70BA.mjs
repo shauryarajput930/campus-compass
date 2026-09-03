@@ -3,13 +3,13 @@ import { n as require_jsx_runtime } from "../_libs/radix-ui__react-context+react
 import { n as require_react } from "../_libs/@radix-ui/react-compose-refs+[...].mjs";
 import { A as Map, H as Heart, J as Clock, R as LoaderCircle, f as Sparkles, v as Search } from "../_libs/lucide-react.mjs";
 import { v as Link } from "../_libs/@tanstack/react-router+[...].mjs";
-import { o as useAuth } from "./router-CMaMXinN.mjs";
+import { o as useAuth } from "./router--Sg3DtRc.mjs";
 import { a as getBuildings } from "./api-upx-0QUe.mjs";
 import { i as getRecent, r as getFavorites } from "./favorites-D3aR_5-0.mjs";
-import { n as useServerFn } from "./createSsrRpc-BDcSRTph.mjs";
+import { n as useServerFn } from "./createSsrRpc-CqEh_Aij.mjs";
 import { t as BuildingCard } from "./building-card-CLvDw1H-.mjs";
-import { t as getAIRecommendations } from "./ai.functions-Cn0JQV0r.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/dashboard-gEzOjiaB.js
+import { t as getAIRecommendations } from "./ai.functions-D82dI9Xv.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/dashboard-Chyi70BA.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 function Dashboard() {

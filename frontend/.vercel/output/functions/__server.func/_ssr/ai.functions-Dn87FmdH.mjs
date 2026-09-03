@@ -1,8 +1,8 @@
 import { St as object, pt as array, wt as string } from "../_libs/@ai-sdk/gateway+[...].mjs";
-import { n as createServerFn } from "./server-BFRsKcKu.mjs";
-import { t as createServerRpc } from "./createServerRpc-DbuEcjY5.mjs";
+import { n as createServerFn } from "./server-DtYuMhH8.mjs";
+import { t as createServerRpc } from "./createServerRpc-ClfSkzfO.mjs";
 import { n as generateText, r as output_exports, t as NoObjectGeneratedError } from "../_libs/ai.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/ai.functions-BZuBYuMN.js
+//#region node_modules/.nitro/vite/services/ssr/assets/ai.functions-Dn87FmdH.js
 var SuggestionSchema = object({ suggestions: array(string()).max(6) });
 var RecommendationSchema = object({ recommendations: array(object({
 	id: string(),

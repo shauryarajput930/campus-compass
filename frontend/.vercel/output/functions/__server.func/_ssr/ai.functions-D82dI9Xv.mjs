@@ -1,7 +1,7 @@
 import { St as object, pt as array, wt as string } from "../_libs/@ai-sdk/gateway+[...].mjs";
-import { n as createServerFn } from "./server-BFRsKcKu.mjs";
-import { t as createSsrRpc } from "./createSsrRpc-BDcSRTph.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/ai.functions-Cn0JQV0r.js
+import { n as createServerFn } from "./server-DtYuMhH8.mjs";
+import { t as createSsrRpc } from "./createSsrRpc-CqEh_Aij.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/ai.functions-D82dI9Xv.js
 var getAISuggestions = createServerFn({ method: "POST" }).inputValidator((input) => object({
 	query: string().max(200),
 	buildings: array(object({

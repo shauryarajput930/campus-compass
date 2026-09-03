@@ -2,9 +2,9 @@ import { o as __toESM } from "../_runtime.mjs";
 import { n as require_jsx_runtime } from "../_libs/radix-ui__react-context+react.mjs";
 import { n as require_react } from "../_libs/@radix-ui/react-compose-refs+[...].mjs";
 import { y as useNavigate } from "../_libs/@tanstack/react-router+[...].mjs";
-import { o as useAuth } from "./router-CMaMXinN.mjs";
+import { o as useAuth } from "./router--Sg3DtRc.mjs";
 import { s as loginWithGoogle } from "./api-upx-0QUe.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/google-signin-cmUdn40p.js
+//#region node_modules/.nitro/vite/services/ssr/assets/google-signin-DosolT7f.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 function GoogleSignInButton({ onError }) {

@@ -3,12 +3,12 @@ import { n as require_jsx_runtime } from "../_libs/radix-ui__react-context+react
 import { n as require_react } from "../_libs/@radix-ui/react-compose-refs+[...].mjs";
 import { E as Navigation, H as Heart, J as Clock, K as Copy, L as LocateFixed, M as MapPin, R as LoaderCircle, W as Download, X as Check, et as Building2 } from "../_libs/lucide-react.mjs";
 import { B as notFound, v as Link, y as useNavigate } from "../_libs/@tanstack/react-router+[...].mjs";
-import { n as Route$1 } from "./router-CMaMXinN.mjs";
+import { n as Route$1 } from "./router--Sg3DtRc.mjs";
 import { i as getBuilding } from "./api-upx-0QUe.mjs";
 import { l as toggleFavorite, o as pushRecent } from "./favorites-D3aR_5-0.mjs";
 import { t as CampusMap } from "./campus-map-C37GgseY.mjs";
 import { t as QRCodeSVG } from "../_libs/qrcode.react.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/buildings._id-BGV82rDJ.js
+//#region node_modules/.nitro/vite/services/ssr/assets/buildings._id-Ds6186et.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 function BuildingQRCode({ id, name }) {

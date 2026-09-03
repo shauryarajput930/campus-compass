@@ -1,7 +1,7 @@
-//#region node_modules/.nitro/vite/services/ssr/assets/_tanstack-start-manifest_v-DYetryT9.js
+//#region node_modules/.nitro/vite/services/ssr/assets/_tanstack-start-manifest_v-Cs1JVuGm.js
 var tsrStartManifest = () => ({ routes: {
 	__root__: {
-		filePath: "D:/PSIT/Sem 5/FSD/campus-compass/src/routes/__root.tsx",
+		filePath: "D:/PSIT/Sem 5/FSD/campus-compass/frontend/src/routes/__root.tsx",
 		children: [
 			"/",
 			"/about",
@@ -35,7 +35,7 @@ var tsrStartManifest = () => ({ routes: {
 		} }]
 	},
 	"/": {
-		filePath: "D:/PSIT/Sem 5/FSD/campus-compass/src/routes/index.tsx",
+		filePath: "D:/PSIT/Sem 5/FSD/campus-compass/frontend/src/routes/index.tsx",
 		children: void 0,
 		preloads: [
 			"/assets/routes-CWtGcMM0.js",
@@ -47,17 +47,17 @@ var tsrStartManifest = () => ({ routes: {
 		]
 	},
 	"/about": {
-		filePath: "D:/PSIT/Sem 5/FSD/campus-compass/src/routes/about.tsx",
+		filePath: "D:/PSIT/Sem 5/FSD/campus-compass/frontend/src/routes/about.tsx",
 		children: void 0,
 		preloads: ["/assets/about-BdcjBocY.js", "/assets/users-C3k4nVXO.js"]
 	},
 	"/contact": {
-		filePath: "D:/PSIT/Sem 5/FSD/campus-compass/src/routes/contact.tsx",
+		filePath: "D:/PSIT/Sem 5/FSD/campus-compass/frontend/src/routes/contact.tsx",
 		children: void 0,
 		preloads: ["/assets/contact-CHMhuPWZ.js", "/assets/map-pin-BKoQjP8_.js"]
 	},
 	"/dashboard": {
-		filePath: "D:/PSIT/Sem 5/FSD/campus-compass/src/routes/dashboard.tsx",
+		filePath: "D:/PSIT/Sem 5/FSD/campus-compass/frontend/src/routes/dashboard.tsx",
 		children: void 0,
 		preloads: [
 			"/assets/dashboard-ySz_z1y1.js",
@@ -72,7 +72,7 @@ var tsrStartManifest = () => ({ routes: {
 		]
 	},
 	"/favorites": {
-		filePath: "D:/PSIT/Sem 5/FSD/campus-compass/src/routes/favorites.tsx",
+		filePath: "D:/PSIT/Sem 5/FSD/campus-compass/frontend/src/routes/favorites.tsx",
 		children: void 0,
 		preloads: [
 			"/assets/favorites-CX5BBE5d.js",
@@ -82,7 +82,7 @@ var tsrStartManifest = () => ({ routes: {
 		]
 	},
 	"/forgot-password": {
-		filePath: "D:/PSIT/Sem 5/FSD/campus-compass/src/routes/forgot-password.tsx",
+		filePath: "D:/PSIT/Sem 5/FSD/campus-compass/frontend/src/routes/forgot-password.tsx",
 		children: void 0,
 		preloads: [
 			"/assets/forgot-password-DhiStFEl.js",
@@ -92,7 +92,7 @@ var tsrStartManifest = () => ({ routes: {
 		]
 	},
 	"/login": {
-		filePath: "D:/PSIT/Sem 5/FSD/campus-compass/src/routes/login.tsx",
+		filePath: "D:/PSIT/Sem 5/FSD/campus-compass/frontend/src/routes/login.tsx",
 		children: void 0,
 		preloads: [
 			"/assets/login-D84eKk1z.js",
@@ -102,7 +102,7 @@ var tsrStartManifest = () => ({ routes: {
 		]
 	},
 	"/map": {
-		filePath: "D:/PSIT/Sem 5/FSD/campus-compass/src/routes/map.tsx",
+		filePath: "D:/PSIT/Sem 5/FSD/campus-compass/frontend/src/routes/map.tsx",
 		children: void 0,
 		preloads: [
 			"/assets/map-CUFin86J.js",
@@ -111,7 +111,7 @@ var tsrStartManifest = () => ({ routes: {
 		]
 	},
 	"/navigate": {
-		filePath: "D:/PSIT/Sem 5/FSD/campus-compass/src/routes/navigate.tsx",
+		filePath: "D:/PSIT/Sem 5/FSD/campus-compass/frontend/src/routes/navigate.tsx",
 		children: void 0,
 		preloads: [
 			"/assets/navigate-CrU6r0jf.js",
@@ -128,7 +128,7 @@ var tsrStartManifest = () => ({ routes: {
 		]
 	},
 	"/register": {
-		filePath: "D:/PSIT/Sem 5/FSD/campus-compass/src/routes/register.tsx",
+		filePath: "D:/PSIT/Sem 5/FSD/campus-compass/frontend/src/routes/register.tsx",
 		children: void 0,
 		preloads: [
 			"/assets/register-7N5TjIEM.js",
@@ -138,7 +138,7 @@ var tsrStartManifest = () => ({ routes: {
 		]
 	},
 	"/reset-password": {
-		filePath: "D:/PSIT/Sem 5/FSD/campus-compass/src/routes/reset-password.tsx",
+		filePath: "D:/PSIT/Sem 5/FSD/campus-compass/frontend/src/routes/reset-password.tsx",
 		children: void 0,
 		preloads: [
 			"/assets/reset-password-CaYUello.js",
@@ -148,7 +148,7 @@ var tsrStartManifest = () => ({ routes: {
 		]
 	},
 	"/scan": {
-		filePath: "D:/PSIT/Sem 5/FSD/campus-compass/src/routes/scan.tsx",
+		filePath: "D:/PSIT/Sem 5/FSD/campus-compass/frontend/src/routes/scan.tsx",
 		children: void 0,
 		preloads: [
 			"/assets/scan-BPwVVZjw.js",
@@ -158,7 +158,7 @@ var tsrStartManifest = () => ({ routes: {
 		]
 	},
 	"/search": {
-		filePath: "D:/PSIT/Sem 5/FSD/campus-compass/src/routes/search.tsx",
+		filePath: "D:/PSIT/Sem 5/FSD/campus-compass/frontend/src/routes/search.tsx",
 		children: void 0,
 		preloads: [
 			"/assets/search-DSe0wngL.js",
@@ -171,7 +171,7 @@ var tsrStartManifest = () => ({ routes: {
 		]
 	},
 	"/admin/dashboard": {
-		filePath: "D:/PSIT/Sem 5/FSD/campus-compass/src/routes/admin.dashboard.tsx",
+		filePath: "D:/PSIT/Sem 5/FSD/campus-compass/frontend/src/routes/admin.dashboard.tsx",
 		children: void 0,
 		preloads: [
 			"/assets/admin.dashboard-XxmoCf3H.js",
@@ -182,7 +182,7 @@ var tsrStartManifest = () => ({ routes: {
 		]
 	},
 	"/buildings/$id": {
-		filePath: "D:/PSIT/Sem 5/FSD/campus-compass/src/routes/buildings.$id.tsx",
+		filePath: "D:/PSIT/Sem 5/FSD/campus-compass/frontend/src/routes/buildings.$id.tsx",
 		children: void 0,
 		preloads: [
 			"/assets/buildings._id-CL6xwDNu.js",
@@ -198,7 +198,7 @@ var tsrStartManifest = () => ({ routes: {
 		]
 	},
 	"/admin/": {
-		filePath: "D:/PSIT/Sem 5/FSD/campus-compass/src/routes/admin.index.tsx",
+		filePath: "D:/PSIT/Sem 5/FSD/campus-compass/frontend/src/routes/admin.index.tsx",
 		children: void 0,
 		preloads: ["/assets/admin.index-BNd-FMaS.js", "/assets/api-DnoW_5Tb.js"]
 	}
