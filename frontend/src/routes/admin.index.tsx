@@ -33,8 +33,8 @@ function AdminLogin() {
       <div className="mx-auto flex min-h-screen max-w-md items-center px-4">
         <div className="w-full rounded-2xl glass-strong p-8 shadow-glow">
           <div className="mb-6 flex items-center gap-2">
-            <div className="grid h-10 w-10 place-items-center rounded-xl" style={{ background: "var(--gradient-brand)" }}><ShieldCheck className="h-5 w-5 text-white" /></div>
-            <div><div className="font-display text-xl font-bold">Admin Portal</div><div className="text-xs text-muted-foreground">Restricted access</div></div>
+            <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-xl border border-border bg-card p-1 shadow-glow"><img src="/logo.png" alt="Campus Compass logo" className="h-full w-full object-contain" /></div>
+            <div><div className="font-display text-xl font-bold">Campus Compass</div><div className="text-xs text-muted-foreground">Admin Portal · Restricted access</div></div>
           </div>
           <form onSubmit={submit} className="space-y-4">
             <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm" placeholder="admin@psit.ac.in" />

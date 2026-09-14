@@ -19,7 +19,9 @@ export function BuildingCard({ b, index = 0 }: { b: Building; index?: number }) 
         <div className="relative h-44 overflow-hidden">
           <img src={b.image} alt={b.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-          <span className="absolute left-3 top-3 rounded-full bg-black/50 px-2 py-0.5 text-[10px] uppercase tracking-widest text-white">{b.code}</span>
+          <span className="absolute left-3 top-3 inline-flex items-center rounded-full bg-black/50 px-2 py-0.5 text-[10px] uppercase tracking-widest text-white">
+            {b.icon ? <img src={b.icon} alt={`${b.name} code icon`} className="h-5 w-5 rounded object-cover" /> : b.code}
+          </span>
         </div>
       </Link>
       <div className="p-4">

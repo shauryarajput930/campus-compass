@@ -17,6 +17,13 @@ const RecommendationSchema = z.object({
     .max(4),
 });
 
+const RouteSuggestionSchema = z.object({
+  suggestions: z.array(z.object({
+    destinationId: z.string(),
+    reason: z.string(),
+  })).max(4),
+});
+
 interface BuildingLite {
   id: string;
   name: string;
@@ -34,7 +41,7 @@ async function makeModel() {
 }
 
 export const getAISuggestions = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         query: z.string().max(200),
@@ -72,7 +79,7 @@ export const getAISuggestions = createServerFn({ method: "POST" })
   });
 
 export const getAIRecommendations = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         recentIds: z.array(z.string()).max(20),
@@ -109,6 +116,40 @@ export const getAIRecommendations = createServerFn({ method: "POST" })
       };
     } catch (e) {
       if (NoObjectGeneratedError.isInstance(e)) return { recommendations: [] };
+      throw e;
+    }
+  });
+
+export const getAIRouteSuggestions = createServerFn({ method: "POST" })
+  .validator((input: unknown) =>
+    z.object({
+      startName: z.string().max(120),
+      destinationId: z.string().max(120),
+      buildings: z.array(z.object({
+        id: z.string(),
+        name: z.string(),
+        code: z.string(),
+        department: z.string(),
+        category: z.string(),
+        facilities: z.array(z.string()),
+      })).max(60),
+    }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const model = await makeModel();
+    const catalog = data.buildings
+      .map((b) => `- id:${b.id} | ${b.code} ${b.name} (${b.department}, ${b.category}) [${b.facilities.slice(0, 4).join(", ")}]`)
+      .join("\n");
+    try {
+      const { output } = await generateText({
+        model,
+        output: Output.object({ schema: RouteSuggestionSchema }),
+        prompt: `Suggest up to 4 useful alternative campus destinations for a student starting at "${data.startName}" and currently choosing "${data.destinationId}". Only use IDs from the catalog. Prefer nearby or contextually useful places such as facilities, food, medical, library, or academic buildings. Give a short practical reason under 60 characters.\n\nCatalog:\n${catalog}`,
+      });
+      const validIds = new Set(data.buildings.map((b) => b.id));
+      return { suggestions: output.suggestions.filter((s) => validIds.has(s.destinationId)).slice(0, 4) };
+    } catch (e) {
+      if (NoObjectGeneratedError.isInstance(e)) return { suggestions: [] };
       throw e;
     }
   });

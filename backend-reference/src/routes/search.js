@@ -6,7 +6,8 @@ const r = Router();
 r.get("/", async (req, res) => {
   const q = (req.query.q || "").toString().trim();
   if (!q) return res.json([]);
-  const rx = new RegExp(q, "i");
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const rx = new RegExp(escaped, "i");
   const results = await Building.find({
     $or: [
       { name: rx }, { code: rx }, { department: rx },

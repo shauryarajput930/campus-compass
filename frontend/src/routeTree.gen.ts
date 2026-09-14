@@ -22,6 +22,7 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ScanRouteImport } from './routes/scan'
 import { Route as SearchRouteImport } from './routes/search'
+import { Route as TeamRouteImport } from './routes/team'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
 import { Route as BuildingsIdRouteImport } from './routes/buildings.$id'
@@ -91,6 +92,11 @@ const SearchRoute = SearchRouteImport.update({
   path: '/search',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TeamRoute = TeamRouteImport.update({
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
@@ -121,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/scan': typeof ScanRoute
   '/search': typeof SearchRoute
+  '/team': typeof TeamRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/buildings/$id': typeof BuildingsIdRoute
   '/admin/': typeof AdminIndexRoute
@@ -139,6 +146,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/scan': typeof ScanRoute
   '/search': typeof SearchRoute
+  '/team': typeof TeamRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/buildings/$id': typeof BuildingsIdRoute
   '/admin': typeof AdminIndexRoute
@@ -158,6 +166,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/scan': typeof ScanRoute
   '/search': typeof SearchRoute
+  '/team': typeof TeamRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/buildings/$id': typeof BuildingsIdRoute
   '/admin/': typeof AdminIndexRoute
@@ -178,6 +187,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/scan'
     | '/search'
+    | '/team'
     | '/admin/dashboard'
     | '/buildings/$id'
     | '/admin/'
@@ -196,6 +206,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/scan'
     | '/search'
+    | '/team'
     | '/admin/dashboard'
     | '/buildings/$id'
     | '/admin'
@@ -214,6 +225,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/scan'
     | '/search'
+    | '/team'
     | '/admin/dashboard'
     | '/buildings/$id'
     | '/admin/'
@@ -233,6 +245,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   ScanRoute: typeof ScanRoute
   SearchRoute: typeof SearchRoute
+  TeamRoute: typeof TeamRoute
   AdminDashboardRoute: typeof AdminDashboardRoute
   BuildingsIdRoute: typeof BuildingsIdRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -331,6 +344,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SearchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/team': {
+      id: '/team'
+      path: '/team'
+      fullPath: '/team'
+      preLoaderRoute: typeof TeamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/': {
       id: '/admin/'
       path: '/admin'
@@ -369,6 +389,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   ScanRoute: ScanRoute,
   SearchRoute: SearchRoute,
+  TeamRoute: TeamRoute,
   AdminDashboardRoute: AdminDashboardRoute,
   BuildingsIdRoute: BuildingsIdRoute,
   AdminIndexRoute: AdminIndexRoute,

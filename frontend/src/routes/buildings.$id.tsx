@@ -1,11 +1,14 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { getBuilding } from "@/lib/api";
+import { DEFAULT_HOME_BACKGROUND, getBuilding, normalizeHomeBackground } from "@/lib/api";
 import type { Building } from "@/lib/mock-data";
 import { CampusMap } from "@/components/campus-map";
 import { BuildingQRCode } from "@/components/qr-code";
+import { LocationPinIcon } from "@/components/location-pin-icon";
 import { pushRecent, toggleFavorite } from "@/lib/favorites";
-import { Heart, MapPin, Clock, Navigation, Building2, LocateFixed, Loader2 } from "lucide-react";
+import { Heart, MapPin, Clock, Navigation, Building2, Loader2, Flag } from "lucide-react";
+import { createReport } from "@/lib/admin";
+import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/buildings/$id")({
   head: () => ({ meta: [{ title: "Building details — Campus Compass" }] }),
@@ -21,11 +24,16 @@ export const Route = createFileRoute("/buildings/$id")({
 function BuildingDetails() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [b, setB] = useState<Building | null>(null);
   const [fav, setFav] = useState(false);
   const [notFoundFlag, setNF] = useState(false);
   const [locating, setLocating] = useState(false);
   const [geoErr, setGeoErr] = useState<string | null>(null);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportCategory, setReportCategory] = useState("details");
+  const [reportMessage, setReportMessage] = useState("");
+  const [reportSent, setReportSent] = useState(false);
 
   function navigateFromHere() {
     if (!b) return;
@@ -63,11 +71,17 @@ function BuildingDetails() {
 
   const roomsByFloor: Record<number, typeof b.rooms> = {};
   b.rooms.forEach((r) => { (roomsByFloor[r.floor] ??= []).push(r); });
+  const buildingHeroImage = normalizeHomeBackground(b.image || DEFAULT_HOME_BACKGROUND);
 
   return (
     <div>
       <section className="relative h-[42vh] overflow-hidden">
-        <img src={b.image} alt={b.name} className="h-full w-full object-cover" />
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage: `linear-gradient(135deg, rgba(15, 23, 42, 0.72), rgba(37, 99, 235, 0.30)), url("${buildingHeroImage.replace(/"/g, '\\"')}")`,
+          }}
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
         <div className="absolute bottom-6 left-0 right-0 mx-auto max-w-7xl px-4">
           <div className="text-xs uppercase tracking-widest text-muted-foreground">{b.code} · {b.department}</div>
@@ -91,11 +105,19 @@ function BuildingDetails() {
               aria-label="Navigate from my current location"
               className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm hover:bg-secondary disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
-              {locating ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <LocateFixed className="h-4 w-4" aria-hidden="true" />}
+              {locating ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <LocationPinIcon className="h-4 w-4" />}
               {locating ? "Locating…" : "From my location"}
             </button>
           </div>
           {geoErr && <p role="alert" className="mt-2 text-xs text-destructive">{geoErr}</p>}
+
+          <div className="mt-4 rounded-xl border border-dashed border-border p-3">
+            {user ? <>
+              <button onClick={() => setReportOpen((open) => !open)} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"><Flag className="h-4 w-4" /> Report incorrect information</button>
+              {reportOpen && <form onSubmit={async (event) => { event.preventDefault(); if (!reportMessage.trim()) return; await createReport({ buildingId: b.id, buildingName: b.name, userName: user.name, userEmail: user.email, category: reportCategory, message: reportMessage.trim() }); setReportMessage(""); setReportSent(true); setReportOpen(false); }} className="mt-3 grid gap-2 sm:grid-cols-[150px_1fr_auto]"><select value={reportCategory} onChange={(event) => setReportCategory(event.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm"><option value="details">Wrong details</option><option value="location">Wrong location</option><option value="other">Other</option></select><input required value={reportMessage} onChange={(event) => setReportMessage(event.target.value)} placeholder="Tell us what needs correction" className="rounded-lg border border-border bg-background px-3 py-2 text-sm" /><button className="rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground">Send report</button></form>}
+            </> : <p className="text-sm text-muted-foreground">Please <Link to="/login" className="font-semibold text-primary hover:underline">sign in</Link> to report incorrect information.</p>}
+            {reportSent && <p className="mt-2 text-xs text-emerald-600">Thanks. Your report was sent to the campus team.</p>}
+          </div>
 
           <p className="mt-6 text-muted-foreground">{b.description}</p>
 

@@ -7,6 +7,9 @@ import { connectDB } from "./src/config/db.js";
 import authRoutes from "./src/routes/auth.js";
 import buildingRoutes from "./src/routes/buildings.js";
 import searchRoutes from "./src/routes/search.js";
+import adminRoutes from "./src/routes/admin.js";
+import reportRoutes from "./src/routes/reports.js";
+import settingsRoutes from "./src/routes/settings.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -19,6 +22,9 @@ app.get("/", (_, res) => res.json({ ok: true, service: "campus-compass-api" }));
 app.use("/api/auth", authRoutes);
 app.use("/api/buildings", buildingRoutes);
 app.use("/api/search", searchRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/reports", reportRoutes);
+app.use("/api/settings", settingsRoutes);
 
 const PORT = process.env.PORT || 5000;
 if (process.env.NODE_ENV !== "test" && !process.env.VERCEL) {

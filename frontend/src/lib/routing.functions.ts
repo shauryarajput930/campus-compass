@@ -110,7 +110,7 @@ function buildFallback(
 }
 
 export const computeRoute = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         origin: LatLng,

@@ -7,7 +7,8 @@ import { useAuth } from "@/lib/auth-context";
 import { BuildingCard } from "@/components/building-card";
 import { getFavorites, getRecent } from "@/lib/favorites";
 import { getAIRecommendations } from "@/lib/ai.functions";
-import { Map, Heart, Clock, Search, Sparkles, Loader2 } from "lucide-react";
+import { getMyReports, type AdminReport } from "@/lib/admin";
+import { Map, Heart, Clock, Search, Sparkles, Loader2, Flag } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — Campus Compass" }] }),
@@ -21,13 +22,15 @@ function Dashboard() {
   const [recentIds, setRecentIds] = useState<string[]>([]);
   const [recs, setRecs] = useState<{ id: string; reason: string }[]>([]);
   const [recsLoading, setRecsLoading] = useState(false);
+  const [myReports, setMyReports] = useState<AdminReport[]>([]);
   const fetchRecs = useServerFn(getAIRecommendations);
 
   useEffect(() => {
     getBuildings().then(setAll);
     setFavIds(getFavorites());
     setRecentIds(getRecent());
-  }, []);
+    if (user) getMyReports(user.email).then(setMyReports).catch(() => setMyReports([]));
+  }, [user]);
 
   useEffect(() => {
     if (all.length === 0) return;
@@ -110,6 +113,13 @@ function Dashboard() {
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {recent.map((b, i) => <BuildingCard key={b.id} b={b} index={i} />)}
           </div>
+        </section>
+      )}
+
+      {user && (
+        <section className="mb-10 rounded-2xl border border-border bg-card p-5 shadow-soft">
+          <div className="flex items-center justify-between gap-3"><div><h2 className="flex items-center gap-2 font-display text-2xl font-semibold"><Flag className="h-5 w-5 text-primary" /> My reports</h2><p className="mt-1 text-sm text-muted-foreground">Track corrections you have submitted to the campus team.</p></div><span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">{myReports.length} total</span></div>
+          <div className="mt-4 space-y-3">{myReports.length === 0 && <p className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">You have not submitted any reports yet.</p>}{myReports.map((report) => <div key={report.id} className="rounded-xl border border-border p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><div className="font-semibold">{report.buildingName || report.buildingId}</div><div className="mt-1 text-xs text-muted-foreground">Problem: {report.category}</div></div><span className="rounded-full bg-secondary px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide">{report.status}</span></div><p className="mt-2 text-sm text-muted-foreground">{report.message}</p><p className="mt-2 text-[10px] text-muted-foreground">{new Date(report.createdAt).toLocaleString()}</p></div>)}</div>
         </section>
       )}
 

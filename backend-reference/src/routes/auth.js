@@ -25,6 +25,7 @@ r.post("/login", async (req, res) => {
     const { email, password } = req.body;
     const user = await User.findOne({ email: (email || "").toLowerCase() });
     if (!user) return res.status(401).json({ error: "Invalid credentials" });
+    if (!user.active) return res.status(403).json({ error: "Account is inactive" });
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) return res.status(401).json({ error: "Invalid credentials" });
     const token = jwt.sign({ id: user._id, role: user.role, email: user.email }, process.env.JWT_SECRET, { expiresIn: "7d" });

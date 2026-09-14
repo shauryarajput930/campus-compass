@@ -1,5 +1,5 @@
 import axios from "axios";
-import { buildings as mockBuildings, type Building } from "./mock-data";
+import { buildings as mockBuildings, normalizeDepartmentName, type Building } from "./mock-data";
 
 /**
  * Axios API client.
@@ -10,6 +10,148 @@ import { buildings as mockBuildings, type Building } from "./mock-data";
  * so the frontend runs without a backend.
  */
 const BASE_URL = import.meta.env.VITE_API_URL as string | undefined;
+export const HOME_BACKGROUND_KEY = "cc_home_background";
+
+export const DEFAULT_HOME_BACKGROUND = "https://psitche.ac.in/assets/slider/building.jpg";
+
+function getBrowserStorage(): Storage | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+const DEFAULT_HOME_SVG = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-label="Campus abstract background">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="38%" stop-color="#1d4ed8"/>
+      <stop offset="100%" stop-color="#0ea5e9"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" x2="1">
+      <stop offset="0%" stop-color="#a78bfa"/>
+      <stop offset="100%" stop-color="#67e8f9"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <circle cx="250" cy="180" r="220" fill="rgba(255,255,255,0.10)"/>
+  <circle cx="1270" cy="120" r="260" fill="rgba(103,232,249,0.12)"/>
+  <path d="M0 720C170 620 350 560 540 600C760 648 900 752 1110 720C1290 694 1460 592 1600 560V900H0Z" fill="rgba(15,23,42,0.38)"/>
+  <path d="M0 770C150 680 300 640 450 675C680 720 780 815 1040 790C1240 772 1430 672 1600 620V900H0Z" fill="rgba(255,255,255,0.06)"/>
+  <g opacity="0.55" stroke="rgba(255,255,255,0.28)" stroke-width="2" fill="none">
+    <path d="M180 260 L480 180 L600 320 L290 420 Z"/>
+    <path d="M670 190 L1030 140 L1240 330 L840 410 Z"/>
+    <path d="M1160 330 L1430 260 L1540 430 L1280 520 Z"/>
+    <path d="M340 500 L640 430 L750 580 L450 660 Z"/>
+  </g>
+  <g opacity="0.72">
+    <path d="M102 610H420" stroke="url(#accent)" stroke-width="11" stroke-linecap="round"/>
+    <path d="M480 610H800" stroke="url(#accent)" stroke-width="11" stroke-linecap="round"/>
+    <path d="M930 610H1220" stroke="url(#accent)" stroke-width="11" stroke-linecap="round"/>
+    <path d="M1265 610H1460" stroke="url(#accent)" stroke-width="11" stroke-linecap="round"/>
+  </g>
+</svg>`;
+export const DEFAULT_HOME_SVG_BACKGROUND = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(DEFAULT_HOME_SVG).replace(/%23/g, "#")}`;
+
+export function normalizeHomeBackground(value: string): string {
+  const cleaned = value.trim().replace(/^['"]|['"]$/g, "").trim();
+  if (!cleaned) return DEFAULT_HOME_BACKGROUND;
+
+  try {
+    if (cleaned.startsWith("data:image/")) return cleaned;
+    if (cleaned.startsWith("/")) {
+      if (typeof window !== "undefined") {
+        new URL(cleaned, window.location.origin);
+        return cleaned;
+      }
+      return DEFAULT_HOME_BACKGROUND;
+    }
+    new URL(cleaned);
+    return cleaned;
+  } catch {
+    return DEFAULT_HOME_BACKGROUND;
+  }
+}
+
+export function getHomeBackground(): string {
+  const storage = getBrowserStorage();
+  if (!storage) return DEFAULT_HOME_BACKGROUND;
+
+  try {
+    const saved = storage.getItem(HOME_BACKGROUND_KEY)?.trim();
+    return normalizeHomeBackground(saved ?? "");
+  } catch {
+    return DEFAULT_HOME_BACKGROUND;
+  }
+}
+
+export async function compressHomeBackgroundImage(
+  value: string,
+  maxWidth = 1280,
+  maxHeight = 720,
+  quality = 0.68
+): Promise<string> {
+  const cleaned = normalizeHomeBackground(value);
+  if (!cleaned.startsWith("data:image/")) return cleaned;
+  if (typeof window === "undefined") return cleaned;
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      const scale = Math.min(1, maxWidth / img.width, maxHeight / img.height);
+      const width = Math.max(1, Math.round(img.width * scale));
+      const height = Math.max(1, Math.round(img.height * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+
+      if (!ctx) {
+        resolve(cleaned);
+        return;
+      }
+
+      // Draw background white for transparent PNGs before converting to JPEG
+      ctx.fillStyle = "#0f172a";
+      ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Force image/jpeg format to ensure compact size (~100-250KB) that fits LocalStorage quota
+      const output = canvas.toDataURL("image/jpeg", quality);
+      resolve(output);
+    };
+
+    img.onerror = () => resolve(cleaned);
+    img.src = cleaned;
+  });
+}
+
+export function persistHomeBackground(url: string): string {
+  const next = normalizeHomeBackground(url);
+  const storage = getBrowserStorage();
+  if (!storage) return next;
+
+  try {
+    if (next === DEFAULT_HOME_BACKGROUND) {
+      storage.removeItem(HOME_BACKGROUND_KEY);
+    } else {
+      storage.setItem(HOME_BACKGROUND_KEY, next);
+    }
+  } catch (error) {
+    console.warn("Unable to persist home background to LocalStorage quota:", error);
+    // If quota still exceeded, store in memory/storage fallback if needed
+  }
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("cc-home-background-changed"));
+    window.dispatchEvent(new Event("storage"));
+  }
+  return next;
+}
 
 export const api = axios.create({
   baseURL: BASE_URL || "/mock",
@@ -29,7 +171,11 @@ const delay = (ms = 200) => new Promise((r) => setTimeout(r, ms));
 export async function getBuildings(): Promise<Building[]> {
   if (useMock()) { await delay(); return readBuildings(); }
   const { data } = await api.get<Building[]>("/api/buildings");
-  return data;
+  return data.map((building) => ({
+    ...building,
+    department: normalizeDepartmentName(building.department),
+    programs: building.programs?.length ? building.programs : [normalizeDepartmentName(building.department)],
+  }));
 }
 
 export async function getBuilding(id: string): Promise<Building | undefined> {
@@ -150,7 +296,21 @@ function readBuildings(): Building[] {
   if (typeof window === "undefined") return [...mockBuildings];
   const raw = localStorage.getItem("cc_buildings");
   if (!raw) { writeBuildings(mockBuildings); return [...mockBuildings]; }
-  try { return JSON.parse(raw) as Building[]; } catch { return [...mockBuildings]; }
+  try {
+    const saved = JSON.parse(raw) as Building[];
+    // Check if cached buildings contain legacy out-of-bounds coordinates (e.g. lat > 26.46 or lng > 80.20)
+    const isLegacy = saved.some((b) => b.lat > 26.46 || b.lat < 26.44 || b.lng > 80.20 || b.lng < 80.18);
+    if (isLegacy) {
+      writeBuildings(mockBuildings);
+      return [...mockBuildings];
+    }
+    const normalized = saved.map((building) => {
+      const department = normalizeDepartmentName(building.department);
+      return { ...building, department, programs: building.programs?.length ? building.programs : [department] };
+    });
+    if (JSON.stringify(saved) !== JSON.stringify(normalized)) writeBuildings(normalized);
+    return normalized;
+  } catch { return [...mockBuildings]; }
 }
 function writeBuildings(list: Building[]) {
   if (typeof window === "undefined") return;
