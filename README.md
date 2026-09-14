@@ -57,7 +57,9 @@ The API runs at `http://localhost:5000`. Set these values in `backend-reference/
 ```env
 MONGO_URI=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret
-CLIENT_ORIGIN=http://localhost:5173
+CLIENT_ORIGIN=http://localhost:3000
+APP_URL=http://localhost:3000
+GOOGLE_CLIENT_ID=your_google_client_id
 ```
 
 Use `npm start` to run without nodemon.
@@ -107,7 +109,7 @@ Feedback reports can only be submitted by signed-in users. Admins can review the
 
 ## Deployment
 
-Build the frontend with `npm run build` and deploy it to Vercel, Netlify, or another compatible host. Deploy `backend-reference/` separately to Render or Railway with `npm install` as the build command and `npm start` as the start command. Set the deployed API URL as the frontend `VITE_API_URL` value. In production, serve the frontend over HTTPS so browser location permission works.
+Build and deploy the frontend to Netlify using the root `netlify.toml`. Set `VITE_API_URL` in Netlify to the deployed Render API URL. Deploy `backend-reference/` to Render using the root `render.yaml`, or configure its root directory as `backend-reference`, build command as `npm install`, and start command as `npm start`. Set `CLIENT_ORIGIN` and `APP_URL` on Render to the deployed Netlify URL. In production, serve the frontend over HTTPS so browser location permission works.
 
 ## Demo Credentials
 
