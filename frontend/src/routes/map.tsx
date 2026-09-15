@@ -115,7 +115,7 @@ function MapPage() {
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Find a canteen, ATM, lab, washroom..."
+              placeholder="Find a canteen, ATM, or lab..."
               className="w-full rounded-xl border border-border bg-background py-2 pl-9 pr-3 text-sm focus:border-primary focus:outline-none"
             />
           </div>

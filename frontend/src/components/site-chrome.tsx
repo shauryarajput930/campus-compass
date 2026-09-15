@@ -1,5 +1,5 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { Compass, Map, LayoutDashboard, Search, Heart, Info, Mail, LogIn, LogOut, ShieldCheck, Menu, X, QrCode } from "lucide-react";
+import { Compass, Map, LayoutDashboard, Search, Heart, Info, Mail, LogIn, LogOut, Menu, X, QrCode } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { getSiteSettings, type SiteSettings } from "@/lib/admin";
@@ -48,11 +48,6 @@ export function Navbar() {
         <div className="flex items-center gap-2">
           {user ? (
             <>
-              {user.role === "admin" && (
-                <Link to="/admin/dashboard" className="hidden items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs md:inline-flex">
-                  <ShieldCheck className="h-4 w-4" /> Admin
-                </Link>
-              )}
               <button onClick={() => { logout(); router.navigate({ to: "/" }); }} className="hidden items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary md:inline-flex">
                 <LogOut className="h-4 w-4" /> Sign out
               </button>
@@ -146,7 +141,6 @@ export function Footer() {
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li><Link to="/about" className="hover:text-foreground">About</Link></li>
             <li><Link to="/contact" className="hover:text-foreground">Contact</Link></li>
-            <li><Link to="/admin" className="hover:text-foreground">Admin</Link></li>
           </ul>
         </div>
         <div className="col-span-2 sm:col-span-1 lg:col-span-1">

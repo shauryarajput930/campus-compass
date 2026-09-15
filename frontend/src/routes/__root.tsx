@@ -6,6 +6,7 @@ import appCss from "../styles.css?url";
 import { ThemeProvider } from "@/lib/theme-context";
 import { MotionProvider } from "@/lib/motion-context";
 import { AuthProvider } from "@/lib/auth-context";
+import { ClerkProvider } from "@clerk/clerk-react";
 import { Navbar, Footer } from "@/components/site-chrome";
 import { MapPin, Navigation, ShieldCheck } from "lucide-react";
 
@@ -83,22 +84,34 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
+
+  if (!publishableKey) {
+    return <div className="flex min-h-screen items-center justify-center px-6 text-center"><p className="max-w-md text-sm text-muted-foreground">Clerk authentication is not configured. Add VITE_CLERK_PUBLISHABLE_KEY to the frontend environment.</p></div>;
+  }
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <MotionProvider>
-          <AuthProvider>
-            <ChromeShell />
-          </AuthProvider>
-        </MotionProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <ClerkProvider publishableKey={publishableKey}>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <MotionProvider>
+            <AuthProvider>
+              <ChromeShell />
+            </AuthProvider>
+          </MotionProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </ClerkProvider>
   );
 }
 
 function ChromeShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const bare = pathname.startsWith("/admin");
+  const isAuthPage = ["/login", "/register", "/forgot-password", "/reset-password"].some(
+    (p) => pathname === p || pathname.startsWith(p),
+  );
+  const bypassLocationGate = bare || isAuthPage;
   const [isLoading, setIsLoading] = useState(true);
   const [locationState, setLocationState] = useState<"checking" | "granted" | "blocked">("checking");
 
@@ -122,7 +135,7 @@ function ChromeShell() {
 
   useEffect(() => { requestLocation(); }, []);
 
-  if (!bare && locationState !== "granted") {
+  if (!bypassLocationGate && locationState !== "granted") {
     return (
       <div className="mesh-bg flex min-h-screen items-center justify-center px-4 py-8">
         <div className="w-full max-w-lg overflow-hidden rounded-3xl border border-border bg-card shadow-soft">

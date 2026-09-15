@@ -1,4 +1,4 @@
-import { createAdminUser, deleteAdminUser, getAdminAnalytics, getAdminUsers, getReports, getSiteSettings, resetAdminUserPassword, updateAdminUser, updateReport, updateSiteSettings, type AdminAnalytics, type AdminReport, type ManagedUser, type SiteSettings } from "@/lib/admin";
+import { createAdminUser, deleteAdminUser, getAdminAnalytics, getAdminUsers, getReports, getSiteSettings, updateReport, updateSiteSettings, type AdminAnalytics, type AdminReport, type ManagedUser, type SiteSettings } from "@/lib/admin";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -14,7 +14,7 @@ import {
 import type { Building } from "@/lib/mock-data";
 import { useAuth } from "@/lib/auth-context";
 import { academicPrograms, buildings as defaultBuildings, departments } from "@/lib/mock-data";
-import { Building2, Users, Search, Layers, Plus, Trash2, Edit3, X, ShieldCheck, LogOut, Upload, MapPinned, Filter, BarChart3, Flag, Save, UserCheck, LockKeyhole } from "lucide-react";
+import { Building2, Users, Search, Layers, Plus, Trash2, Edit3, X, ShieldCheck, LogOut, Upload, MapPinned, Filter, BarChart3, Flag, Save } from "lucide-react";
 import { CampusMap } from "@/components/campus-map";
 
 export const Route = createFileRoute("/admin/dashboard")({
@@ -30,6 +30,7 @@ function AdminDashboard() {
   const [creating, setCreating] = useState(false);
   const [homeBackground, setHomeBackground] = useState<string>(getHomeBackground());
   const [coordinateTargetId, setCoordinateTargetId] = useState("");
+  const [coordinateDraft, setCoordinateDraft] = useState<{ lat: number; lng: number } | null>(null);
   const [coordinateSaving, setCoordinateSaving] = useState(false);
   const [buildingQuery, setBuildingQuery] = useState("");
   const [buildingCategory, setBuildingCategory] = useState("all");
@@ -39,11 +40,6 @@ function AdminDashboard() {
   const [userQuery, setUserQuery] = useState("");
   const [settings, setSettings] = useState<SiteSettings>({ contactEmail: "", contactPhone: "", instagram: "", linkedin: "", twitter: "" });
   const [settingsSaved, setSettingsSaved] = useState(false);
-  const [resetUser, setResetUser] = useState<ManagedUser | null>(null);
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [resetError, setResetError] = useState("");
-  const [resetSaving, setResetSaving] = useState(false);
   const [deleteUser, setDeleteUser] = useState<ManagedUser | null>(null);
   const [deleteSaving, setDeleteSaving] = useState(false);
   const [addUserOpen, setAddUserOpen] = useState(false);
@@ -98,12 +94,22 @@ function AdminDashboard() {
       .filter((item) => !query || `${item.name} ${item.email}`.toLowerCase().includes(query))
       .sort((first, second) => Number(second.role === "admin") - Number(first.role === "admin"));
   }, [users, userQuery]);
-  const handleCoordinateChange = async ({ lat, lng }: { lat: number; lng: number }) => {
+  const handleCoordinateChange = ({ lat, lng }: { lat: number; lng: number }) => {
     if (!coordinateTarget) return;
+    setCoordinateDraft({ lat, lng });
+    setB((current) => current.map((building) => building.id === coordinateTarget.id ? { ...building, lat, lng } : building));
+  };
+  const saveCoordinates = async () => {
+    if (!coordinateTarget || !coordinateDraft) return;
     setCoordinateSaving(true);
     try {
-      const updated = await updateBuilding(coordinateTarget.id, { lat, lng });
-      setB((current) => current.map((building) => building.id === updated.id ? { ...building, lat, lng } : building));
+      const updated = await updateBuilding(coordinateTarget.id, coordinateDraft);
+      setB((current) => current.map((building) => building.id === updated.id ? { ...building, lat: updated.lat, lng: updated.lng } : building));
+      setCoordinateDraft(null);
+    } catch {
+      const buildings = await getBuildings();
+      setB(buildings.length ? buildings : defaultBuildings);
+      setCoordinateDraft(null);
     } finally {
       setCoordinateSaving(false);
     }
@@ -200,7 +206,7 @@ function AdminDashboard() {
             </div>
             <select
               value={coordinateTargetId}
-              onChange={(event) => setCoordinateTargetId(event.target.value)}
+              onChange={(event) => { setCoordinateTargetId(event.target.value); setCoordinateDraft(null); }}
               className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
             >
               {b.map((building) => <option key={building.id} value={building.id}>{building.name} ({building.code})</option>)}
@@ -212,6 +218,12 @@ function AdminDashboard() {
               <span>{coordinateSaving ? "Saving coordinates..." : `${coordinateTarget.lat.toFixed(6)}, ${coordinateTarget.lng.toFixed(6)}`}</span>
             </div>
           )}
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/20 bg-primary/5 p-3">
+            <p className="text-xs text-muted-foreground">{coordinateDraft ? "Unsaved map position. Save when the marker is in the right place." : "Click the map to choose a new position."}</p>
+            <button type="button" onClick={saveCoordinates} disabled={!coordinateDraft || coordinateSaving} className="btn-hero btn-hero-hover px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50">
+              {coordinateSaving ? "Saving..." : "Save coordinates"}
+            </button>
+          </div>
           <div className="mt-4">
             <CampusMap
               buildings={b}
@@ -270,7 +282,7 @@ function AdminDashboard() {
         <section className="mt-10 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
           <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="flex items-center gap-2 font-display text-xl font-semibold"><Users className="h-5 w-5 text-primary" /> User management</h2><p className="text-sm text-muted-foreground">Manage access and account roles.</p></div><div className="flex gap-2"><input value={userQuery} onChange={(event) => setUserQuery(event.target.value)} placeholder="Search users..." className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-xs sm:w-40 sm:flex-none" /><button type="button" onClick={() => setAddUserOpen(true)} className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground"><Plus className="h-3.5 w-3.5" /> Add user</button></div></div>
-            <div className="mt-4 space-y-2">{managedUsers.map((item) => <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border p-3 text-sm"><div><div className="font-medium">{item.name}</div><div className="text-xs text-muted-foreground">{item.email}</div></div><div className="flex items-center gap-2"><select value={item.role} onChange={async (event) => { const updated = await updateAdminUser(item.id, { role: event.target.value as ManagedUser["role"] }); setUsers((current) => current.map((user) => user.id === item.id ? updated : user)); }} className="rounded-md border border-border bg-background px-2 py-1 text-xs"><option value="user">User</option><option value="admin">Admin</option></select><button onClick={() => { setResetUser(item); setNewPassword(""); setConfirmPassword(""); setResetError(""); }} className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs"><LockKeyhole className="h-3 w-3" /> Reset password</button><button onClick={async () => { const updated = await updateAdminUser(item.id, { active: !item.active }); setUsers((current) => current.map((user) => user.id === item.id ? updated : user)); }} className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs"><UserCheck className="h-3 w-3" /> {item.active ? "Active" : "Inactive"}</button><button onClick={() => setDeleteUser(item)} className="inline-flex items-center gap-1 rounded-md border border-destructive/50 bg-destructive/10 px-2 py-1 text-xs text-destructive hover:bg-destructive/20"><Trash2 className="h-3 w-3" /> Delete</button></div></div>)}</div>
+            <div className="mt-4 space-y-2">{managedUsers.map((item) => <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border p-3 text-sm"><div><div className="font-medium">{item.name}</div><div className="text-xs text-muted-foreground">{item.email}</div></div><div className="flex items-center gap-2"><span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-semibold capitalize text-primary">{item.role}</span><span className={`rounded-full px-2 py-1 text-xs font-semibold ${item.active ? "bg-emerald-500/10 text-emerald-600" : "bg-muted text-muted-foreground"}`}>{item.active ? "Active" : "Inactive"}</span><button onClick={() => setDeleteUser(item)} className="inline-flex items-center gap-1 rounded-md border border-destructive/50 bg-destructive/10 px-2 py-1 text-xs text-destructive hover:bg-destructive/20"><Trash2 className="h-3 w-3" /> Delete</button></div></div>)}</div>
           </div>
           <div className="rounded-2xl border border-border bg-card p-5 shadow-soft"><h2 className="flex items-center gap-2 font-display text-xl font-semibold"><BarChart3 className="h-5 w-5 text-primary" /> Analytics</h2><div className="mt-4 grid grid-cols-3 gap-2 text-center">{[["Users", analytics?.totalUsers ?? 0], ["Active", analytics?.activeUsers ?? 0], ["Reports", analytics?.reports ?? reports.length]].map(([label, value]) => <div key={String(label)} className="rounded-xl bg-secondary/60 p-3"><div className="text-2xl font-bold">{value}</div><div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div></div>)}</div><div className="mt-5 flex h-28 items-end gap-2">{(analytics?.dailyUsage ?? []).map((day) => <div key={day.label} className="flex flex-1 flex-col items-center gap-1"><div className="w-full rounded-t bg-primary" style={{ height: `${Math.max(8, day.value)}%` }} /><span className="text-[10px] text-muted-foreground">{day.label}</span></div>)}</div></div>
         </section>
@@ -291,16 +303,6 @@ function AdminDashboard() {
             setEditing(null); setCreating(false); refresh();
           }}
         />
-      )}
-
-      {resetUser && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/60 px-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="reset-password-title">
-          <form onSubmit={async (event) => { event.preventDefault(); if (newPassword.length < 8) { setResetError("Password must be at least 8 characters."); return; } if (newPassword !== confirmPassword) { setResetError("Passwords do not match."); return; } setResetSaving(true); setResetError(""); try { await resetAdminUserPassword(resetUser.id, newPassword); setResetUser(null); } catch { setResetError("Could not reset password. Please try again."); } finally { setResetSaving(false); } }} className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl">
-            <div className="flex items-start justify-between gap-4"><div><div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary"><LockKeyhole className="h-5 w-5" /></div><h2 id="reset-password-title" className="mt-4 font-display text-xl font-semibold">Reset password</h2><p className="mt-1 text-sm text-muted-foreground">Set a new password for {resetUser.name}.</p></div><button type="button" onClick={() => setResetUser(null)} aria-label="Close reset password dialog" className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-foreground"><X className="h-5 w-5" /></button></div>
-            <div className="mt-5 space-y-3"><input autoFocus required minLength={8} type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} placeholder="New password" className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm" /><input required minLength={8} type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Confirm new password" className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm" />{resetError && <p className="text-xs text-destructive">{resetError}</p>}</div>
-            <div className="mt-6 flex justify-end gap-2"><button type="button" onClick={() => setResetUser(null)} className="rounded-lg border border-border px-4 py-2 text-sm">Cancel</button><button disabled={resetSaving} className="btn-hero btn-hero-hover px-4 py-2 text-sm">{resetSaving ? "Saving..." : "Reset password"}</button></div>
-          </form>
-        </div>
       )}
 
       {deleteUser && (
