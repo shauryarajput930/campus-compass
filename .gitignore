@@ -15,13 +15,14 @@ dist-ssr/
 .vinxi/
 .tanstack/
 .nitro/
-.vercel/
 
 # Environment variables
 .env
 .env.*
 !.env.example
 *.local
+frontend/.env
+frontend/.env.*
 
 # Editor directories and files
 .vscode/*
