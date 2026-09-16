@@ -38,6 +38,7 @@ export function CampusMap({
   const mapInstanceRef = useRef<any>(null);
   const markersLayerRef = useRef<any>(null);
   const polylineRef = useRef<any>(null);
+  const hasFittedInitialBoundsRef = useRef(false);
 
   const [selected, setSelected] = useState<Building | null>(null);
   const [ready, setReady] = useState(false);
@@ -289,8 +290,9 @@ export function CampusMap({
         if (target) {
           map.setView([target.lat, target.lng], 18);
         }
-      } else if (bounds.isValid() && buildings.length > 1) {
+      } else if (bounds.isValid() && buildings.length > 1 && !hasFittedInitialBoundsRef.current) {
         map.fitBounds(bounds, { padding: [40, 40] });
+        hasFittedInitialBoundsRef.current = true;
       }
     }
 

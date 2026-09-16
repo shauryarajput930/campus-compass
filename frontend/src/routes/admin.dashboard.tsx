@@ -14,7 +14,7 @@ import {
 import type { Building } from "@/lib/mock-data";
 import { useAuth } from "@/lib/auth-context";
 import { academicPrograms, buildings as defaultBuildings, departments } from "@/lib/mock-data";
-import { Building2, Users, Search, Layers, Plus, Trash2, Edit3, X, ShieldCheck, LogOut, Upload, MapPinned, Filter, BarChart3, Flag, Save } from "lucide-react";
+import { Building2, Users, Search, Layers, Plus, Trash2, Edit3, X, ShieldCheck, LogOut, Upload, MapPinned, Filter, BarChart3, Flag, Save, Menu } from "lucide-react";
 import { CampusMap } from "@/components/campus-map";
 
 export const Route = createFileRoute("/admin/dashboard")({
@@ -40,9 +40,12 @@ function AdminDashboard() {
   const [userQuery, setUserQuery] = useState("");
   const [settings, setSettings] = useState<SiteSettings>({ contactEmail: "", contactPhone: "", instagram: "", linkedin: "", twitter: "" });
   const [settingsSaved, setSettingsSaved] = useState(false);
+  const [deleteBuildingTarget, setDeleteBuildingTarget] = useState<Building | null>(null);
+  const [deleteBuildingSaving, setDeleteBuildingSaving] = useState(false);
   const [deleteUser, setDeleteUser] = useState<ManagedUser | null>(null);
   const [deleteSaving, setDeleteSaving] = useState(false);
   const [addUserOpen, setAddUserOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => { if (!user || user.role !== "admin") nav({ to: "/admin" }); }, [user, nav]);
   useEffect(() => {
@@ -123,9 +126,20 @@ function AdminDashboard() {
             <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl border border-border bg-card p-1 shadow-glow"><img src="/logo.png" alt="Campus Compass logo" className="h-full w-full object-contain" /></div>
             <div><div className="font-display font-bold">Campus Compass · Admin</div><div className="text-[10px] uppercase tracking-widest text-muted-foreground">Control panel</div></div>
           </div>
-          <div className="flex items-center gap-2">
-            <Link to="/" className="rounded-lg border border-border px-3 py-2 text-xs">View site</Link>
-            <button onClick={() => { logout(); nav({ to: "/admin" }); }} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs"><LogOut className="h-3.5 w-3.5" /> Sign out</button>
+          <div className="relative flex items-center gap-2">
+            <div className="hidden items-center gap-2 sm:flex">
+              <Link to="/" className="rounded-lg border border-border px-3 py-2 text-xs">View site</Link>
+              <button onClick={() => { logout(); nav({ to: "/admin" }); }} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs"><LogOut className="h-3.5 w-3.5" /> Sign out</button>
+            </div>
+            <button type="button" onClick={() => setMobileMenuOpen((open) => !open)} aria-label="Open admin menu" aria-expanded={mobileMenuOpen} className="grid h-10 w-10 place-items-center rounded-lg border border-border sm:hidden">
+              <Menu className="h-5 w-5" />
+            </button>
+            {mobileMenuOpen && (
+              <div className="absolute right-0 top-12 z-30 w-36 rounded-xl border border-border bg-card p-1.5 shadow-xl sm:hidden">
+                <Link to="/" onClick={() => setMobileMenuOpen(false)} className="block rounded-lg px-3 py-2 text-xs hover:bg-secondary">View site</Link>
+                <button onClick={() => { setMobileMenuOpen(false); logout(); nav({ to: "/admin" }); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs hover:bg-secondary"><LogOut className="h-3.5 w-3.5" /> Sign out</button>
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -269,7 +283,7 @@ function AdminDashboard() {
                   <td className="px-4 py-2">{(x.rooms || []).length}</td>
                   <td className="px-4 py-2 text-right">
                     <button onClick={() => setEditing(x)} className="mr-2 rounded-md border border-border px-2 py-1 text-xs inline-flex items-center gap-1"><Edit3 className="h-3 w-3" /> Edit</button>
-                    <button onClick={async () => { if (confirm("Delete " + x.name + "?")) { await deleteBuilding(x.id); refresh(); } }}
+                    <button onClick={() => setDeleteBuildingTarget(x)}
                       className="rounded-md border border-destructive/50 bg-destructive/10 px-2 py-1 text-xs text-destructive inline-flex items-center gap-1"><Trash2 className="h-3 w-3" /> Delete</button>
                   </td>
                 </tr>
@@ -303,6 +317,25 @@ function AdminDashboard() {
             setEditing(null); setCreating(false); refresh();
           }}
         />
+      )}
+
+      {deleteBuildingTarget && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/60 px-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="delete-building-title">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="grid h-10 w-10 place-items-center rounded-xl bg-destructive/10 text-destructive"><Trash2 className="h-5 w-5" /></div>
+                <h2 id="delete-building-title" className="mt-4 font-display text-xl font-semibold">Delete building?</h2>
+                <p className="mt-2 text-sm text-muted-foreground">This will permanently delete <strong className="text-foreground">{deleteBuildingTarget.name}</strong> and cannot be undone.</p>
+              </div>
+              <button type="button" onClick={() => setDeleteBuildingTarget(null)} aria-label="Close delete building dialog" className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-foreground"><X className="h-5 w-5" /></button>
+            </div>
+            <div className="mt-6 flex justify-end gap-2">
+              <button type="button" onClick={() => setDeleteBuildingTarget(null)} disabled={deleteBuildingSaving} className="rounded-lg border border-border px-4 py-2 text-sm">Cancel</button>
+              <button type="button" disabled={deleteBuildingSaving} onClick={async () => { if (!deleteBuildingTarget) return; setDeleteBuildingSaving(true); try { await deleteBuilding(deleteBuildingTarget.id); setDeleteBuildingTarget(null); await refresh(); } finally { setDeleteBuildingSaving(false); } }} className="inline-flex items-center gap-2 rounded-lg bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground hover:bg-destructive/90 disabled:opacity-60"><Trash2 className="h-4 w-4" /> {deleteBuildingSaving ? "Deleting..." : "Delete permanently"}</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {deleteUser && (

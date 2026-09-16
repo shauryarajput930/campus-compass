@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import type { Building } from "@/lib/mock-data";
 import { Heart, MapPin } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 
 export function BuildingCard({ b, index = 0 }: { b: Building; index?: number }) {
   const [fav, setFav] = useState(false);
+  const navigate = useNavigate();
   useEffect(() => {
     const list: string[] = JSON.parse(localStorage.getItem("cc_favorites") || "[]");
     setFav(list.includes(b.id));
@@ -14,8 +15,17 @@ export function BuildingCard({ b, index = 0 }: { b: Building; index?: number }) 
 
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.04 }}
-      className="group overflow-hidden rounded-2xl border border-border bg-card shadow-soft transition hover:-translate-y-1 hover:shadow-glow">
-      <Link to="/buildings/$id" params={{ id: b.id }} className="block">
+      role="link"
+      tabIndex={0}
+      onClick={() => navigate({ to: "/buildings/$id", params: { id: b.id } })}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          navigate({ to: "/buildings/$id", params: { id: b.id } });
+        }
+      }}
+      className="group cursor-pointer overflow-hidden rounded-2xl border border-border bg-card shadow-soft transition hover:-translate-y-1 hover:shadow-glow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+      <Link to="/buildings/$id" params={{ id: b.id }} className="block" onClick={(event) => event.stopPropagation()}>
         <div className="relative h-44 overflow-hidden">
           <img src={b.image} alt={b.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
@@ -30,7 +40,7 @@ export function BuildingCard({ b, index = 0 }: { b: Building; index?: number }) 
             <div className="text-xs text-muted-foreground">{b.department}</div>
             <h3 className="font-display text-base font-semibold">{b.name}</h3>
           </div>
-          <button onClick={(e) => { e.preventDefault(); const n = toggleFavorite(b.id); setFav(n.includes(b.id)); }}
+          <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); const n = toggleFavorite(b.id); setFav(n.includes(b.id)); }}
             className="grid h-8 w-8 place-items-center rounded-lg border border-border" aria-label="Favourite">
             <Heart className={"h-4 w-4 " + (fav ? "fill-red-500 text-red-500" : "")} />
           </button>
