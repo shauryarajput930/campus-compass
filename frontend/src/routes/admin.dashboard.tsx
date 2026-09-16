@@ -332,7 +332,7 @@ function AdminDashboard() {
             </div>
             <div className="mt-6 flex justify-end gap-2">
               <button type="button" onClick={() => setDeleteBuildingTarget(null)} disabled={deleteBuildingSaving} className="rounded-lg border border-border px-4 py-2 text-sm">Cancel</button>
-              <button type="button" disabled={deleteBuildingSaving} onClick={async () => { if (!deleteBuildingTarget) return; setDeleteBuildingSaving(true); try { await deleteBuilding(deleteBuildingTarget.id); setDeleteBuildingTarget(null); await refresh(); } finally { setDeleteBuildingSaving(false); } }} className="inline-flex items-center gap-2 rounded-lg bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground hover:bg-destructive/90 disabled:opacity-60"><Trash2 className="h-4 w-4" /> {deleteBuildingSaving ? "Deleting..." : "Delete permanently"}</button>
+              <button type="button" disabled={deleteBuildingSaving} onClick={async () => { if (!deleteBuildingTarget) return; setDeleteBuildingSaving(true); try { await deleteBuilding(deleteBuildingTarget.id); setDeleteBuildingTarget(null); await refresh(); } catch (error) { console.error("Failed to delete building:", error); window.alert("Unable to delete this building. Check that your admin session is still valid."); } finally { setDeleteBuildingSaving(false); } }} className="inline-flex items-center gap-2 rounded-lg bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground hover:bg-destructive/90 disabled:opacity-60"><Trash2 className="h-4 w-4" /> {deleteBuildingSaving ? "Deleting..." : "Delete permanently"}</button>
             </div>
           </div>
         </div>
