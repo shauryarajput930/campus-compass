@@ -11,6 +11,8 @@ import { buildings as mockBuildings, normalizeDepartmentName, type Building } fr
  */
 const BASE_URL = import.meta.env.VITE_API_URL as string | undefined;
 export const HOME_BACKGROUND_KEY = "cc_home_background";
+export const BUILDINGS_CHANGED_EVENT = "cc-buildings-changed";
+const BUILDINGS_CHANGED_KEY = "cc_buildings_changed";
 
 export const DEFAULT_HOME_BACKGROUND = "https://psitche.ac.in/assets/slider/building.jpg";
 
@@ -185,8 +187,9 @@ export async function getBuilding(id: string): Promise<Building | undefined> {
 }
 
 export async function createBuilding(b: Building): Promise<Building> {
-  if (useMock()) { const list = readBuildings(); list.push(b); writeBuildings(list); return b; }
+  if (useMock()) { const list = readBuildings(); list.push(b); writeBuildings(list); notifyBuildingsChanged(); return b; }
   const { data } = await api.post<Building>("/api/buildings", b);
+  notifyBuildingsChanged();
   return data;
 }
 
@@ -197,15 +200,24 @@ export async function updateBuilding(id: string, patch: Partial<Building>): Prom
     if (idx === -1) throw new Error("Not found");
     list[idx] = { ...list[idx], ...patch };
     writeBuildings(list);
+    notifyBuildingsChanged();
     return list[idx];
   }
   const { data } = await api.put<Building>(`/api/buildings/${id}`, patch);
+  notifyBuildingsChanged();
   return data;
 }
 
 export async function deleteBuilding(id: string): Promise<void> {
-  if (useMock()) { writeBuildings(readBuildings().filter((b) => b.id !== id)); return; }
+  if (useMock()) { writeBuildings(readBuildings().filter((b) => b.id !== id)); notifyBuildingsChanged(); return; }
   await api.delete(`/api/buildings/${id}`);
+  notifyBuildingsChanged();
+}
+
+function notifyBuildingsChanged() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new Event(BUILDINGS_CHANGED_EVENT));
+  try { localStorage.setItem(BUILDINGS_CHANGED_KEY, String(Date.now())); } catch { /* storage is optional */ }
 }
 
 // ---------- Search ----------

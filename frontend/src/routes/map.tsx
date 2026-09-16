@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { getBuildings } from "@/lib/api";
-import type { Building } from "@/lib/mock-data";
+import { useBuildings } from "@/hooks/use-buildings";
 import { CampusMap } from "@/components/campus-map";
 import { LocationPinIcon } from "@/components/location-pin-icon";
 import { haversineDistance } from "@/lib/osrm-routing";
@@ -21,17 +20,13 @@ export const Route = createFileRoute("/map")({
 });
 
 function MapPage() {
-  const [b, setB] = useState<Building[]>([]);
+  const b = useBuildings();
   const [cat, setCat] = useState<string>("all");
   const [query, setQuery] = useState("");
   const [nearbyOnly, setNearbyOnly] = useState(false);
   const [radius, setRadius] = useState(1000);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
-
-  useEffect(() => {
-    getBuildings().then(setB);
-  }, []);
 
   useEffect(() => {
     if (!navigator.geolocation) {

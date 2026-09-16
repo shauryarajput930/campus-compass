@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { getBuildings } from "@/lib/api";
+import { useBuildings } from "@/hooks/use-buildings";
 import type { Building } from "@/lib/mock-data";
 import { BuildingCard } from "@/components/building-card";
 import { Heart } from "lucide-react";
@@ -12,9 +12,9 @@ export const Route = createFileRoute("/favorites")({
 });
 
 function FavoritesPage() {
-  const [b, setB] = useState<Building[]>([]);
+  const b = useBuildings();
   const [ids, setIds] = useState<string[]>([]);
-  useEffect(() => { getBuildings().then(setB); setIds(getFavorites()); }, []);
+  useEffect(() => { setIds(getFavorites()); }, []);
   const favs = b.filter((x) => ids.includes(x.id));
 
   return (

@@ -2,9 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { getBuildings } from "@/lib/api";
 import { getAIRouteSuggestions } from "@/lib/ai.functions";
-import type { Building } from "@/lib/mock-data";
+import { useBuildings } from "@/hooks/use-buildings";
 import { CampusMap } from "@/components/campus-map";
 import { LocationPinIcon } from "@/components/location-pin-icon";
 import {
@@ -56,7 +55,7 @@ const CURRENT_LOCATION_KEY = "__current__";
 
 function NavigatePage() {
   const params = Route.useSearch();
-  const [locations, setLocations] = useState<Building[]>([]);
+  const locations = useBuildings();
 
   // Selection states
   const [fromId, setFromId] = useState<string>(
@@ -87,16 +86,13 @@ function NavigatePage() {
   const fetchRouteSuggestions = useServerFn(getAIRouteSuggestions);
 
   useEffect(() => {
-    getBuildings().then((b) => {
-      setLocations(b);
-      if (!params.from && b[0]) {
-        setFromId(b[0].id);
+      if (!params.from && locations[0]) {
+        setFromId(locations[0].id);
       }
-      if (!params.to && b[1]) {
-        setToId(b[1].id);
+      if (!params.to && locations[1]) {
+        setToId(locations[1].id);
       }
-    });
-  }, []);
+  }, [locations, params.from, params.to]);
 
   // Filtered locations based on search
   const filteredLocations = useMemo(() => {

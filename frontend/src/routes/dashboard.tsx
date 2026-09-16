@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { getBuildings } from "@/lib/api";
 import type { Building } from "@/lib/mock-data";
+import { useBuildings } from "@/hooks/use-buildings";
 import { useAuth } from "@/lib/auth-context";
 import { BuildingCard } from "@/components/building-card";
 import { getFavorites, getRecent } from "@/lib/favorites";
@@ -17,7 +17,7 @@ export const Route = createFileRoute("/dashboard")({
 
 function Dashboard() {
   const { user } = useAuth();
-  const [all, setAll] = useState<Building[]>([]);
+  const all = useBuildings();
   const [favIds, setFavIds] = useState<string[]>([]);
   const [recentIds, setRecentIds] = useState<string[]>([]);
   const [recs, setRecs] = useState<{ id: string; reason: string }[]>([]);
@@ -26,7 +26,6 @@ function Dashboard() {
   const fetchRecs = useServerFn(getAIRecommendations);
 
   useEffect(() => {
-    getBuildings().then(setAll);
     setFavIds(getFavorites());
     setRecentIds(getRecent());
     if (user) getMyReports(user.email).then(setMyReports).catch(() => setMyReports([]));

@@ -2,10 +2,11 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { ArrowRight, Search, MapPinned, Route as RouteIcon, Camera, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getBuildings, getHomeBackground } from "@/lib/api";
+import { getHomeBackground } from "@/lib/api";
 import type { Building } from "@/lib/mock-data";
 import { stats } from "@/lib/mock-data";
 import { BuildingCard } from "@/components/building-card";
+import { useBuildings } from "@/hooks/use-buildings";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -18,6 +19,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Landing() {
+  const buildings = useBuildings();
   const [q, setQ] = useState("");
   const [featured, setFeatured] = useState<Building[]>([]);
   const [campusPulse, setCampusPulse] = useState({
@@ -47,8 +49,7 @@ function Landing() {
   }, []);
 
   useEffect(() => {
-    getBuildings().then((b) => {
-      const nextFeatured = b.slice(0, 6);
+    const nextFeatured = buildings.slice(0, 6);
       setFeatured(nextFeatured);
 
       if (!nextFeatured.length) return;
@@ -62,8 +63,7 @@ function Landing() {
         nearbyLab: primary.name,
         bestRoute: secondary.name,
       });
-    });
-  }, []);
+  }, [buildings]);
 
   const highlights = featured.length
     ? featured.slice(0, 3).map((building) => building.name)

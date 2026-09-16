@@ -1,8 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { QrCode, X, Camera, ShieldAlert, CheckCircle2 } from "lucide-react";
-import { getBuildings } from "@/lib/api";
-import type { Building } from "@/lib/mock-data";
+import { useBuildings } from "@/hooks/use-buildings";
 
 export const Route = createFileRoute("/scan")({
   head: () => ({
@@ -65,15 +64,12 @@ function ScanPage() {
   const [status, setStatus] = useState<"idle" | "running" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<ScanFeedback | null>(null);
-  const [buildings, setBuildings] = useState<Building[]>([]);
+  const buildings = useBuildings();
   const validIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    getBuildings().then((list) => {
-      setBuildings(list);
-      validIdsRef.current = new Set(list.map((b) => b.id));
-    });
-  }, []);
+    validIdsRef.current = new Set(buildings.map((building) => building.id));
+  }, [buildings]);
 
   const start = async () => {
     setError(null);

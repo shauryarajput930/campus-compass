@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import { useServerFn } from "@tanstack/react-start";
-import { getBuildings } from "@/lib/api";
+import { useBuildings } from "@/hooks/use-buildings";
 import type { Building } from "@/lib/mock-data";
 import { BuildingCard } from "@/components/building-card";
 import { getAISuggestions } from "@/lib/ai.functions";
@@ -19,7 +19,7 @@ export const Route = createFileRoute("/search")({
 
 function SearchPage() {
   const { q: initial } = Route.useSearch();
-  const [all, setAll] = useState<Building[]>([]);
+  const all = useBuildings();
   const [q, setQ] = useState(initial ?? "");
   const [interim, setInterim] = useState("");
   const [listening, setListening] = useState(false);
@@ -30,7 +30,6 @@ function SearchPage() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fetchSuggestions = useServerFn(getAISuggestions);
 
-  useEffect(() => { getBuildings().then(setAll); }, []);
 
   const results = useMemo(() => {
     const s = q.toLowerCase().trim();
