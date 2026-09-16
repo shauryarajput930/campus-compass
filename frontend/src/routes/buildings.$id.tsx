@@ -70,7 +70,7 @@ function BuildingDetails() {
   if (!b) return <div className="mx-auto max-w-6xl px-4 py-16 text-muted-foreground">Loading…</div>;
 
   const roomsByFloor: Record<number, typeof b.rooms> = {};
-  b.rooms.forEach((r) => { (roomsByFloor[r.floor] ??= []).push(r); });
+  (b.rooms || []).forEach((r) => { (roomsByFloor[r.floor] ??= []).push(r); });
   const buildingHeroImage = normalizeHomeBackground(b.image || DEFAULT_HOME_BACKGROUND);
 
   return (

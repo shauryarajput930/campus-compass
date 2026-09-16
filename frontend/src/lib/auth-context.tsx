@@ -7,8 +7,8 @@ export function checkIsAdmin(roleMeta: unknown, email: string | undefined): bool
   if (!email) return false;
   const normalized = email.toLowerCase().trim();
   return (
-    normalized === "admin@psit.ac.in" ||
-    normalized.startsWith("admin@") ||
+    normalized.startsWith("admin") ||
+    normalized.includes("admin") ||
     normalized.endsWith("@admin.psit.ac.in")
   );
 }

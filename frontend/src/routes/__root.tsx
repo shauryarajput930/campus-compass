@@ -72,7 +72,7 @@ const themeInitScript = `(function(){try{var s=localStorage.getItem('cc_theme');
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <HeadContent />
@@ -146,8 +146,8 @@ function ChromeShell() {
               <MapPin className="h-8 w-8" />
             </div>
             <div className="relative mt-7 text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">Campus Compass</div>
-            <h1 className="relative mt-2 font-display text-3xl font-bold">Location access required</h1>
-            <p className="relative mt-2 max-w-md text-sm leading-6 text-slate-300">Allow your location to unlock accurate campus directions and nearby building navigation.</p>
+            <h1 className="relative mt-2 font-display text-3xl font-bold">Location access</h1>
+            <p className="relative mt-2 max-w-md text-sm leading-6 text-slate-300">Allow location to unlock turn-by-turn campus directions and nearby building navigation, or explore as guest.</p>
           </div>
           <div className="p-8">
             <div className="grid gap-3 sm:grid-cols-3">
@@ -158,12 +158,17 @@ function ChromeShell() {
               ].map((item) => <div key={item.label} className="rounded-xl border border-border bg-background p-3 text-center"><item.icon className="mx-auto h-4 w-4 text-primary" /><div className="mt-2 text-xs text-muted-foreground">{item.label}</div></div>)}
             </div>
           {locationState === "checking" ? (
-            <p className="mt-6 text-center text-sm text-muted-foreground">Waiting for your location permission…</p>
+            <div className="mt-6 text-center space-y-3">
+              <p className="text-sm text-muted-foreground">Waiting for location permission…</p>
+              <button onClick={() => setLocationState("granted")} className="text-xs text-primary hover:underline">Continue without location</button>
+            </div>
           ) : (
             <>
-              <p className="mt-6 text-center text-sm text-muted-foreground">Allow location access in your browser, then continue to Campus Compass.</p>
-              <p className="mt-3 text-center text-xs text-muted-foreground">Blocked it earlier? Open the lock icon beside the address bar and set Location to Allow.</p>
-              <button onClick={requestLocation} className="btn-hero btn-hero-hover mt-6 w-full px-5 py-3 text-sm">Allow location and continue</button>
+              <p className="mt-6 text-center text-sm text-muted-foreground">Allow location access in your browser, or continue without location.</p>
+              <div className="mt-6 flex flex-col gap-2">
+                <button onClick={requestLocation} className="btn-hero btn-hero-hover w-full px-5 py-3 text-sm">Allow location and continue</button>
+                <button onClick={() => setLocationState("granted")} className="rounded-xl border border-border py-2.5 text-xs text-muted-foreground transition hover:bg-secondary hover:text-foreground">Explore Campus without location</button>
+              </div>
             </>
           )}
           </div>

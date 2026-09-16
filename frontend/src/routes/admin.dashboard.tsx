@@ -145,7 +145,7 @@ function AdminDashboard() {
           {[
             { icon: Building2, label: "Buildings", value: b.length },
             { icon: Layers, label: "Academic programs", value: academicProgramCount },
-            { icon: Search, label: "Rooms", value: b.reduce((n, x) => n + x.rooms.length, 0) },
+            { icon: Search, label: "Rooms", value: b.reduce((n, x) => n + (x.rooms?.length || 0), 0) },
             { icon: Users, label: "Users", value: 1240 },
           ].map((c) => (
             <div key={c.label} className="rounded-2xl border border-border bg-card p-5 shadow-soft">
@@ -266,7 +266,7 @@ function AdminDashboard() {
                   <td className="px-4 py-2"><img src={x.image} alt="" className="h-10 w-16 rounded-md object-cover" /></td>
                   <td className="px-4 py-2 font-medium">{x.name} <span className="text-xs text-muted-foreground">({x.code})</span></td>
                   <td className="px-4 py-2 text-muted-foreground">{x.department}</td>
-                  <td className="px-4 py-2">{x.rooms.length}</td>
+                  <td className="px-4 py-2">{(x.rooms || []).length}</td>
                   <td className="px-4 py-2 text-right">
                     <button onClick={() => setEditing(x)} className="mr-2 rounded-md border border-border px-2 py-1 text-xs inline-flex items-center gap-1"><Edit3 className="h-3 w-3" /> Edit</button>
                     <button onClick={async () => { if (confirm("Delete " + x.name + "?")) { await deleteBuilding(x.id); refresh(); } }}

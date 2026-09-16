@@ -314,5 +314,9 @@ function readBuildings(): Building[] {
 }
 function writeBuildings(list: Building[]) {
   if (typeof window === "undefined") return;
-  localStorage.setItem("cc_buildings", JSON.stringify(list));
+  try {
+    localStorage.setItem("cc_buildings", JSON.stringify(list));
+  } catch (error) {
+    console.warn("Unable to write buildings to LocalStorage:", error);
+  }
 }
