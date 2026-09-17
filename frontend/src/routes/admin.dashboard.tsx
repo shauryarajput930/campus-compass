@@ -30,9 +30,12 @@ function AdminDashboard() {
   const [editing, setEditing] = useState<Building | null>(null);
   const [creating, setCreating] = useState(false);
   const [homeBackground, setHomeBackground] = useState<string>(getHomeBackground());
+  const [homeBackgroundSaved, setHomeBackgroundSaved] = useState(false);
+  const [homeBackgroundSaving, setHomeBackgroundSaving] = useState(false);
   const [coordinateTargetId, setCoordinateTargetId] = useState("");
   const [coordinateDraft, setCoordinateDraft] = useState<{ lat: number; lng: number } | null>(null);
   const [coordinateSaving, setCoordinateSaving] = useState(false);
+  const [coordinateSaved, setCoordinateSaved] = useState(false);
   const [buildingQuery, setBuildingQuery] = useState("");
   const [buildingCategory, setBuildingCategory] = useState("all");
   const [users, setUsers] = useState<ManagedUser[]>([]);
@@ -41,6 +44,8 @@ function AdminDashboard() {
   const [userQuery, setUserQuery] = useState("");
   const [settings, setSettings] = useState<SiteSettings>({ contactEmail: "", contactPhone: "", instagram: "", linkedin: "", twitter: "" });
   const [settingsSaved, setSettingsSaved] = useState(false);
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [settingsError, setSettingsError] = useState("");
   const [deleteBuildingTarget, setDeleteBuildingTarget] = useState<Building | null>(null);
   const [deleteBuildingSaving, setDeleteBuildingSaving] = useState(false);
   const [deleteUser, setDeleteUser] = useState<ManagedUser | null>(null);
@@ -87,9 +92,18 @@ function AdminDashboard() {
   }, []);
 
   const refresh = () => getBuildings().then(setB);
-  const saveHomeBackground = () => {
-    const next = persistHomeBackground(homeBackground);
-    setHomeBackground(next);
+  const saveHomeBackground = async () => {
+    setHomeBackgroundSaving(true);
+    try {
+      const next = persistHomeBackground(homeBackground);
+      setHomeBackground(next);
+      setHomeBackgroundSaved(true);
+      setTimeout(() => setHomeBackgroundSaved(false), 2200);
+    } catch (err) {
+      console.error("Failed to save home background:", err);
+    } finally {
+      setHomeBackgroundSaving(false);
+    }
   };
 
   const handleHomeBackgroundFile = async (file: File) => {
@@ -125,11 +139,15 @@ function AdminDashboard() {
   const saveCoordinates = async () => {
     if (!coordinateTarget || !coordinateDraft) return;
     setCoordinateSaving(true);
+    setCoordinateSaved(false);
     try {
       const updated = await updateBuilding(coordinateTarget.id, coordinateDraft);
       setB((current) => current.map((building) => building.id === updated.id ? { ...building, lat: updated.lat, lng: updated.lng } : building));
       setCoordinateDraft(null);
-    } catch {
+      setCoordinateSaved(true);
+      setTimeout(() => setCoordinateSaved(false), 2500);
+    } catch (err) {
+      console.error("Failed to save coordinates:", err);
       const buildings = await getBuildings();
       setB(buildings);
       setCoordinateDraft(null);
@@ -199,7 +217,9 @@ function AdminDashboard() {
             </div>
             <div className="flex items-center gap-2">
               <button onClick={() => { setHomeBackground(DEFAULT_HOME_BACKGROUND); persistHomeBackground(DEFAULT_HOME_BACKGROUND); }} className="rounded-lg border border-border px-3 py-2 text-xs">Reset</button>
-              <button onClick={saveHomeBackground} className="btn-hero btn-hero-hover px-3 py-2 text-sm">Save</button>
+              <button onClick={saveHomeBackground} disabled={homeBackgroundSaving} className="btn-hero btn-hero-hover px-3 py-2 text-sm disabled:opacity-50">
+                {homeBackgroundSaving ? "Saving..." : homeBackgroundSaved ? "Saved!" : "Save"}
+              </button>
             </div>
           </div>
 
@@ -255,7 +275,7 @@ function AdminDashboard() {
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/20 bg-primary/5 p-3">
             <p className="text-xs text-muted-foreground">{coordinateDraft ? "Unsaved map position. Save when the marker is in the right place." : "Click the map to choose a new position."}</p>
             <button type="button" onClick={saveCoordinates} disabled={!coordinateDraft || coordinateSaving} className="btn-hero btn-hero-hover px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50">
-              {coordinateSaving ? "Saving..." : "Save coordinates"}
+              {coordinateSaving ? "Saving..." : coordinateSaved ? "Coordinates saved!" : "Save coordinates"}
             </button>
           </div>
           <div className="mt-4">
@@ -323,7 +343,37 @@ function AdminDashboard() {
 
         <section className="mt-10 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="rounded-2xl border border-border bg-card p-5 shadow-soft"><h2 className="flex items-center gap-2 font-display text-xl font-semibold"><Flag className="h-5 w-5 text-primary" /> Feedback & reports</h2><p className="mt-1 text-sm text-muted-foreground">Review incorrect information reported by users.</p><div className="mt-4 space-y-3">{reports.length === 0 && <p className="text-sm text-muted-foreground">No reports yet.</p>}{reports.map((report) => <div key={report.id} className="rounded-xl border border-border p-3"><div className="flex flex-wrap items-start justify-between gap-3"><div><div className="text-sm font-semibold">{report.buildingName || report.buildingId}</div><div className="mt-1 text-xs text-muted-foreground">Reported by: {report.userName || "Signed-in user"}{report.userEmail ? ` · ${report.userEmail}` : ""}</div><div className="mt-2 inline-flex rounded-full bg-primary/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary">Problem: {report.category}</div></div><select aria-label={`State for report about ${report.buildingName || report.buildingId}`} value={report.status} onChange={async (event) => { const updated = await updateReport(report.id, event.target.value as AdminReport["status"]); setReports((current) => current.map((item) => item.id === report.id ? updated : item)); }} className="rounded-md border border-border bg-background px-2 py-1 text-xs"><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option><option value="resolved">Resolved</option></select></div><p className="mt-2 text-sm text-foreground">{report.message}</p><p className="mt-2 text-[10px] text-muted-foreground">{new Date(report.createdAt).toLocaleString()}</p></div>)}</div></div>
-          <div className="rounded-2xl border border-border bg-card p-5 shadow-soft"><h2 className="flex items-center gap-2 font-display text-xl font-semibold"><Save className="h-5 w-5 text-primary" /> Site settings</h2><p className="text-sm text-muted-foreground">Public contact and social links.</p><div className="mt-4 grid gap-3">{(["contactEmail", "contactPhone", "instagram", "linkedin", "twitter"] as const).map((key) => <input key={key} value={settings[key]} onChange={(event) => setSettings((current) => ({ ...current, [key]: event.target.value }))} placeholder={key} className="rounded-lg border border-border bg-background px-3 py-2 text-sm" />)}<button onClick={async () => { await updateSiteSettings(settings); setSettingsSaved(true); setTimeout(() => setSettingsSaved(false), 1800); }} className="btn-hero btn-hero-hover inline-flex items-center justify-center gap-2 px-4 py-2 text-sm"><Save className="h-4 w-4" /> {settingsSaved ? "Saved" : "Save settings"}</button></div></div>
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+            <h2 className="flex items-center gap-2 font-display text-xl font-semibold"><Save className="h-5 w-5 text-primary" /> Site settings</h2>
+            <p className="text-sm text-muted-foreground">Public contact and social links.</p>
+            <div className="mt-4 grid gap-3">
+              {(["contactEmail", "contactPhone", "instagram", "linkedin", "twitter"] as const).map((key) => (
+                <input key={key} value={settings[key]} onChange={(event) => setSettings((current) => ({ ...current, [key]: event.target.value }))} placeholder={key} className="rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+              ))}
+              <button
+                type="button"
+                onClick={async () => {
+                  setSettingsSaving(true);
+                  setSettingsError("");
+                  try {
+                    await updateSiteSettings(settings);
+                    setSettingsSaved(true);
+                    setTimeout(() => setSettingsSaved(false), 2000);
+                  } catch (err) {
+                    console.error("Failed to save settings:", err);
+                    setSettingsError("Unable to save settings. Please try again.");
+                  } finally {
+                    setSettingsSaving(false);
+                  }
+                }}
+                disabled={settingsSaving}
+                className="btn-hero btn-hero-hover inline-flex items-center justify-center gap-2 px-4 py-2 text-sm disabled:opacity-50"
+              >
+                <Save className="h-4 w-4" /> {settingsSaving ? "Saving..." : settingsSaved ? "Saved!" : "Save settings"}
+              </button>
+              {settingsError && <p className="text-xs text-destructive mt-1">{settingsError}</p>}
+            </div>
+          </div>
         </section>
       </main>
 
@@ -430,13 +480,15 @@ function AddUserDialog({ onClose, onCreated }: { onClose: () => void; onCreated:
   );
 }
 
-function BuildingEditor({ value, onClose, onSave }: { value: Building | null; onClose: () => void; onSave: (b: Building) => void }) {
+function BuildingEditor({ value, onClose, onSave }: { value: Building | null; onClose: () => void; onSave: (b: Building) => Promise<void> | void }) {
   const [d, setD] = useState<Building>(value ?? {
     id: "", name: "", code: "", icon: "", department: departments[0], programs: [departments[0]], description: "",
     openingTime: "9:00 AM – 5:00 PM", facilities: [], image: "",
     gallery: [], category: "academic", lat: 26.45016, lng: 80.19200, floors: 1, rooms: [],
   });
 
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
   const [customProgramInput, setCustomProgramInput] = useState("");
 
   const handleFile = async (file: File) => {
@@ -515,19 +567,49 @@ function BuildingEditor({ value, onClose, onSave }: { value: Building | null; on
     updatePrograms(next);
   };
 
+  const handleSave = async (event?: React.FormEvent) => {
+    if (event) event.preventDefault();
+    if (!d.name.trim()) {
+      setError("Building name is required.");
+      return;
+    }
+    if (!d.code.trim()) {
+      setError("Building code is required.");
+      return;
+    }
+    setSaving(true);
+    setError("");
+    try {
+      const buildingToSave: Building = {
+        ...d,
+        name: d.name.trim(),
+        code: d.code.trim(),
+        image: d.image.trim() || DEFAULT_HOME_BACKGROUND,
+        programs: selectedPrograms.length ? selectedPrograms : [d.department || departments[0]],
+      };
+      await onSave(buildingToSave);
+    } catch (caught) {
+      console.error("Failed to save building:", caught);
+      setError(caught instanceof Error ? caught.message : "Could not save building. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4" onClick={onClose}>
-      <div className="w-full max-w-2xl overflow-hidden rounded-2xl glass-strong shadow-glow" onClick={(e) => e.stopPropagation()}>
+      <form onSubmit={handleSave} className="w-full max-w-2xl overflow-hidden rounded-2xl glass-strong shadow-glow" onClick={(e) => e.stopPropagation()}>
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card/95 p-4 backdrop-blur">
           <h3 className="font-display text-lg font-semibold">{value ? "Edit building" : "Add building"}</h3>
-          <button onClick={onClose} className="grid h-8 w-8 place-items-center rounded-lg border border-border"><X className="h-4 w-4" /></button>
+          <button type="button" onClick={onClose} className="grid h-8 w-8 place-items-center rounded-lg border border-border"><X className="h-4 w-4" /></button>
         </div>
         <div className="building-editor__scroll max-h-[70vh] overflow-y-auto p-4">
+          {error && <div className="mb-4 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs font-semibold text-destructive">{error}</div>}
           <div className="grid gap-3 md:grid-cols-2">
-            <label className="block"><span className="text-xs text-muted-foreground">Name</span>
-              <input value={d.name} onChange={(e) => setD({ ...d, name: e.target.value })} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" /></label>
-            <label className="block"><span className="text-xs text-muted-foreground">Code</span>
-              <input value={d.code} onChange={(e) => setD({ ...d, code: e.target.value })} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" /></label>
+            <label className="block"><span className="text-xs text-muted-foreground">Name *</span>
+              <input required value={d.name} onChange={(e) => setD({ ...d, name: e.target.value })} placeholder="Building name" className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" /></label>
+            <label className="block"><span className="text-xs text-muted-foreground">Code *</span>
+              <input required value={d.code} onChange={(e) => setD({ ...d, code: e.target.value })} placeholder="Building code (e.g. NLHC)" className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" /></label>
             <div className="block">
               <span className="text-xs text-muted-foreground">Code icon</span>
               <div className="mt-1 flex items-center gap-2">
@@ -626,9 +708,9 @@ function BuildingEditor({ value, onClose, onSave }: { value: Building | null; on
                 {["academic", "hostel", "sports", "food", "facility", "admin"].map((x) => <option key={x}>{x}</option>)}
               </select></label>
             <label className="block"><span className="text-xs text-muted-foreground">Latitude</span>
-              <input type="number" step="0.0001" value={d.lat} onChange={(e) => setD({ ...d, lat: parseFloat(e.target.value) })} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" /></label>
+              <input type="number" step="0.0001" value={d.lat} onChange={(e) => setD({ ...d, lat: parseFloat(e.target.value) || 0 })} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" /></label>
             <label className="block"><span className="text-xs text-muted-foreground">Longitude</span>
-              <input type="number" step="0.0001" value={d.lng} onChange={(e) => setD({ ...d, lng: parseFloat(e.target.value) })} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" /></label>
+              <input type="number" step="0.0001" value={d.lng} onChange={(e) => setD({ ...d, lng: parseFloat(e.target.value) || 0 })} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" /></label>
             <label className="block"><span className="text-xs text-muted-foreground">Floors</span>
               <input
                 type="number"
@@ -744,10 +826,12 @@ function BuildingEditor({ value, onClose, onSave }: { value: Building | null; on
           </div>
         </div>
         <div className="sticky bottom-0 z-10 flex justify-end gap-2 border-t border-border bg-card/95 p-4 backdrop-blur">
-          <button onClick={onClose} className="rounded-lg border border-border px-4 py-2 text-sm">Cancel</button>
-          <button onClick={() => onSave(d)} className="btn-hero btn-hero-hover px-4 py-2 text-sm">Save</button>
+          <button type="button" onClick={onClose} disabled={saving} className="rounded-lg border border-border px-4 py-2 text-sm">Cancel</button>
+          <button type="submit" disabled={saving} className="btn-hero btn-hero-hover px-4 py-2 text-sm disabled:opacity-50">
+            {saving ? "Saving..." : "Save building"}
+          </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 }

@@ -11,8 +11,34 @@ const mockUsers: ManagedUser[] = [
 ];
 const defaultSettings: SiteSettings = { contactEmail: "support@campuscompass.in", contactPhone: "+91 1800 123 4567", instagram: "https://instagram.com/psitkanpur", linkedin: "https://linkedin.com/school/psit-kanpur", twitter: "https://x.com/psitkanpur" };
 const mockKey = "cc_admin_";
-const read = <T,>(key: string, fallback: T): T => { try { return JSON.parse(localStorage.getItem(mockKey + key) || "null") ?? fallback; } catch { return fallback; } };
-const write = (key: string, value: unknown) => localStorage.setItem(mockKey + key, JSON.stringify(value));
+const adminMemoryCache: Record<string, unknown> = {};
+
+const read = <T,>(key: string, fallback: T): T => {
+  if (key in adminMemoryCache) return adminMemoryCache[key] as T;
+  try {
+    const raw = localStorage.getItem(mockKey + key);
+    if (!raw) {
+      adminMemoryCache[key] = fallback;
+      return fallback;
+    }
+    const parsed = JSON.parse(raw) as T;
+    adminMemoryCache[key] = parsed;
+    return parsed;
+  } catch {
+    adminMemoryCache[key] = fallback;
+    return fallback;
+  }
+};
+
+const write = (key: string, value: unknown) => {
+  adminMemoryCache[key] = value;
+  try {
+    localStorage.setItem(mockKey + key, JSON.stringify(value));
+  } catch (err) {
+    console.warn(`Unable to write ${key} to LocalStorage:`, err);
+  }
+};
+
 const isMock = () => !import.meta.env.VITE_API_URL;
 
 export async function getAdminUsers(): Promise<ManagedUser[]> {

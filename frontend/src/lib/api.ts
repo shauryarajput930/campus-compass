@@ -319,16 +319,26 @@ export async function resetPassword(token: string, password: string): Promise<{ 
 }
 
 // ---------- LocalStorage mock persistence ----------
+let memoryBuildingsCache: Building[] | null = null;
+
 function readBuildings(): Building[] {
+  if (memoryBuildingsCache !== null) {
+    return memoryBuildingsCache;
+  }
   if (typeof window === "undefined") return [...mockBuildings];
-  const raw = localStorage.getItem("cc_buildings");
-  if (raw === null) {
-    writeBuildings(mockBuildings);
-    return [...mockBuildings];
+  const storage = getBrowserStorage();
+  if (!storage) {
+    memoryBuildingsCache = [...mockBuildings];
+    return memoryBuildingsCache;
   }
   try {
+    const raw = storage.getItem("cc_buildings");
+    if (raw === null) {
+      writeBuildings(mockBuildings);
+      return memoryBuildingsCache || [...mockBuildings];
+    }
     const saved = JSON.parse(raw) as Building[];
-    return saved.map((building) => {
+    const result = saved.map((building) => {
       const department = normalizeDepartmentName(building.department || "");
       return {
         ...building,
@@ -336,25 +346,44 @@ function readBuildings(): Building[] {
         programs: building.programs?.length ? building.programs : [department || "General"],
       };
     });
+    memoryBuildingsCache = result;
+    return result;
   } catch {
-    return [...mockBuildings];
+    memoryBuildingsCache = [...mockBuildings];
+    return memoryBuildingsCache;
   }
 }
+
 function writeBuildings(list: Building[]) {
-  if (typeof window === "undefined") return;
+  memoryBuildingsCache = [...list];
+  const storage = getBrowserStorage();
+  if (!storage) return;
+
   try {
-    localStorage.setItem("cc_buildings", JSON.stringify(list));
+    storage.setItem("cc_buildings", JSON.stringify(list));
   } catch (error) {
     console.warn("Unable to write buildings to LocalStorage quota, trimming images...", error);
     try {
       const trimmed = list.map((b) => ({
         ...b,
-        image: b.image.startsWith("data:image/") && b.image.length > 50000 ? "" : b.image,
-        gallery: (b.gallery || []).map((img) => (img.startsWith("data:image/") && img.length > 50000 ? "" : img)).filter(Boolean),
+        image: b.image.startsWith("data:image/") && b.image.length > 20000 ? "" : b.image,
+        icon: b.icon && b.icon.startsWith("data:image/") && b.icon.length > 10000 ? "" : b.icon,
+        gallery: (b.gallery || []).map((img) => (img.startsWith("data:image/") && img.length > 20000 ? "" : img)).filter(Boolean),
       }));
-      localStorage.setItem("cc_buildings", JSON.stringify(trimmed));
+      storage.setItem("cc_buildings", JSON.stringify(trimmed));
     } catch (innerError) {
-      console.error("Failed to write trimmed buildings to LocalStorage:", innerError);
+      console.warn("Trimming failed, stripping all base64 data URLs...", innerError);
+      try {
+        const stripped = list.map((b) => ({
+          ...b,
+          image: b.image.startsWith("data:image/") ? "" : b.image,
+          icon: b.icon && b.icon.startsWith("data:image/") ? "" : b.icon,
+          gallery: (b.gallery || []).filter((img) => !img.startsWith("data:image/")),
+        }));
+        storage.setItem("cc_buildings", JSON.stringify(stripped));
+      } catch (finalError) {
+        console.error("Unable to persist buildings to LocalStorage:", finalError);
+      }
     }
   }
 }
