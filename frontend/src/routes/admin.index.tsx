@@ -77,11 +77,27 @@ function AdminLogin() {
     }
   };
 
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
-    if (isLoaded && isSignedIn && isAdmin) {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted && isLoaded && isSignedIn && isAdmin) {
       nav({ to: "/admin/dashboard", replace: true });
     }
-  }, [isLoaded, isSignedIn, isAdmin, nav]);
+  }, [mounted, isLoaded, isSignedIn, isAdmin, nav]);
+
+  if (!mounted) {
+    return (
+      <div className="mesh-bg flex min-h-screen items-center justify-center px-4 py-10">
+        <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-glow sm:p-8">
+          <p className="text-center text-sm text-muted-foreground">Loading admin portal...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoaded && isSignedIn) {
     if (isAdmin) {

@@ -55,9 +55,15 @@ function AdminDashboard() {
   const [deleteUser, setDeleteUser] = useState<ManagedUser | null>(null);
   const [deleteSaving, setDeleteSaving] = useState(false);
   const [addUserOpen, setAddUserOpen] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => { if (!user || user.role !== "admin") nav({ to: "/admin" }); }, [user, nav]);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted && (!user || user.role !== "admin")) nav({ to: "/admin" });
+  }, [mounted, user, nav]);
   useEffect(() => {
     let active = true;
     const load = () => {

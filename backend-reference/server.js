@@ -15,56 +15,40 @@ import favoriteRoutes from "./src/routes/favorites.js";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
-// 1. CORS Configuration (placed BEFORE all body parsers and routes)
-const allowedOrigins = [
-  "https://psit-campus-compass.netlify.app",
-  "http://localhost:5173",
-  "http://localhost:3000",
-  "http://localhost:5000",
-];
+// 1. Unified CORS & OPTIONS Preflight Middleware (executes BEFORE express.json, auth, and routes)
+const ALLOWED_ORIGIN = "https://psit-campus-compass.netlify.app";
 
-const corsOptions = {
-  origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-
-    const cleanOrigin = origin.trim().replace(/\/+$/, "");
-
-    if (
-      allowedOrigins.includes(cleanOrigin) ||
-      cleanOrigin.endsWith(".netlify.app") ||
-      cleanOrigin.includes("localhost") ||
-      cleanOrigin.includes("127.0.0.1")
-    ) {
-      return callback(null, true);
-    }
-
-    return callback(null, true);
-  },
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"],
-  optionsSuccessStatus: 200,
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true;
+  const clean = origin.trim().replace(/\/+$/, "");
+  if (clean === ALLOWED_ORIGIN) return true;
+  if (clean.endsWith(".netlify.app")) return true;
+  if (clean.includes("localhost") || clean.includes("127.0.0.1")) return true;
+  return false;
 };
 
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
-
-// Ensure CORS headers are attached on all responses (including 401/403 error responses and preflights)
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  if (origin) {
-    const cleanOrigin = origin.trim().replace(/\/+$/, "");
+  const cleanOrigin = origin ? origin.trim().replace(/\/+$/, "") : "";
+
+  console.log(`[cors-debug] method=${req.method} origin=${cleanOrigin || "none"} url=${req.originalUrl || req.url}`);
+
+  if (cleanOrigin && isAllowedOrigin(cleanOrigin)) {
     res.setHeader("Access-Control-Allow-Origin", cleanOrigin);
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Accept, Origin");
   } else {
-    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
   }
 
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Accept, Origin");
+  res.setHeader("Access-Control-Max-Age", "86400");
+
   if (req.method === "OPTIONS") {
-    return res.status(200).end();
+    console.log(`[cors-debug] preflight handled method=OPTIONS url=${req.originalUrl || req.url}`);
+    return res.sendStatus(204);
   }
+
   next();
 });
 
