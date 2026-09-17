@@ -156,14 +156,41 @@ export function persistHomeBackground(url: string): string {
   return next;
 }
 
+declare global {
+  interface Window {
+    Clerk?: {
+      session?: {
+        getToken: (options?: { skipCache?: boolean }) => Promise<string | null>;
+      };
+    };
+  }
+}
+
 export const api = axios.create({
   baseURL: BASE_URL || "/mock",
   timeout: 15000,
 });
 
-api.interceptors.request.use((config) => {
-  const token = typeof window !== "undefined" ? localStorage.getItem("cc_token") : null;
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+api.interceptors.request.use(async (config) => {
+  let token: string | null = null;
+
+  if (typeof window !== "undefined") {
+    if (window.Clerk?.session) {
+      try {
+        token = await window.Clerk.session.getToken();
+      } catch (err) {
+        console.warn("Unable to fetch fresh Clerk session token:", err);
+      }
+    }
+
+    if (!token) {
+      token = localStorage.getItem("cc_token");
+    }
+  }
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 });
 
