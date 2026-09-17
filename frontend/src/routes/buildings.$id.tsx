@@ -57,13 +57,29 @@ function BuildingDetails() {
   }
 
   useEffect(() => {
-    getBuilding(id).then((x) => {
-      if (!x) { setNF(true); return; }
-      setB(x);
-      pushRecent(x.id);
-      const list: string[] = JSON.parse(localStorage.getItem("cc_favorites") || "[]");
-      setFav(list.includes(x.id));
-    });
+    let active = true;
+    const loadBuilding = () => {
+      getBuilding(id).then((x) => {
+        if (!active) return;
+        if (!x) { setNF(true); return; }
+        setB(x);
+        pushRecent(x.id);
+        const list: string[] = JSON.parse(localStorage.getItem("cc_favorites") || "[]");
+        setFav(list.includes(x.id));
+      });
+    };
+
+    loadBuilding();
+
+    const onChanged = () => loadBuilding();
+    window.addEventListener(BUILDINGS_CHANGED_EVENT, onChanged);
+    window.addEventListener("storage", onChanged);
+
+    return () => {
+      active = false;
+      window.removeEventListener(BUILDINGS_CHANGED_EVENT, onChanged);
+      window.removeEventListener("storage", onChanged);
+    };
   }, [id]);
 
   if (notFoundFlag) throw notFound();

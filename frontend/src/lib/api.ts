@@ -187,8 +187,18 @@ export async function getBuilding(id: string): Promise<Building | undefined> {
 }
 
 export async function createBuilding(b: Building): Promise<Building> {
-  if (useMock()) { const list = readBuildings(); list.push(b); writeBuildings(list); notifyBuildingsChanged(); return b; }
-  const { data } = await api.post<Building>("/api/buildings", b);
+  const buildingWithId: Building = {
+    ...b,
+    id: b.id && b.id.trim() ? b.id.trim() : "b_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7),
+  };
+  if (useMock()) {
+    const list = readBuildings();
+    list.push(buildingWithId);
+    writeBuildings(list);
+    notifyBuildingsChanged();
+    return buildingWithId;
+  }
+  const { data } = await api.post<Building>("/api/buildings", buildingWithId);
   notifyBuildingsChanged();
   return data;
 }
@@ -209,7 +219,12 @@ export async function updateBuilding(id: string, patch: Partial<Building>): Prom
 }
 
 export async function deleteBuilding(id: string): Promise<void> {
-  if (useMock()) { writeBuildings(readBuildings().filter((b) => b.id !== id)); notifyBuildingsChanged(); return; }
+  if (useMock()) {
+    const list = readBuildings().filter((b) => b.id !== id);
+    writeBuildings(list);
+    notifyBuildingsChanged();
+    return;
+  }
   await api.delete(`/api/buildings/${id}`);
   notifyBuildingsChanged();
 }
@@ -307,28 +322,39 @@ export async function resetPassword(token: string, password: string): Promise<{ 
 function readBuildings(): Building[] {
   if (typeof window === "undefined") return [...mockBuildings];
   const raw = localStorage.getItem("cc_buildings");
-  if (!raw) { writeBuildings(mockBuildings); return [...mockBuildings]; }
+  if (raw === null) {
+    writeBuildings(mockBuildings);
+    return [...mockBuildings];
+  }
   try {
     const saved = JSON.parse(raw) as Building[];
-    // Check if cached buildings contain legacy out-of-bounds coordinates (e.g. lat > 26.46 or lng > 80.20)
-    const isLegacy = saved.some((b) => b.lat > 26.46 || b.lat < 26.44 || b.lng > 80.20 || b.lng < 80.18);
-    if (isLegacy) {
-      writeBuildings(mockBuildings);
-      return [...mockBuildings];
-    }
-    const normalized = saved.map((building) => {
-      const department = normalizeDepartmentName(building.department);
-      return { ...building, department, programs: building.programs?.length ? building.programs : [department] };
+    return saved.map((building) => {
+      const department = normalizeDepartmentName(building.department || "");
+      return {
+        ...building,
+        department,
+        programs: building.programs?.length ? building.programs : [department || "General"],
+      };
     });
-    if (JSON.stringify(saved) !== JSON.stringify(normalized)) writeBuildings(normalized);
-    return normalized;
-  } catch { return [...mockBuildings]; }
+  } catch {
+    return [...mockBuildings];
+  }
 }
 function writeBuildings(list: Building[]) {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem("cc_buildings", JSON.stringify(list));
   } catch (error) {
-    console.warn("Unable to write buildings to LocalStorage:", error);
+    console.warn("Unable to write buildings to LocalStorage quota, trimming images...", error);
+    try {
+      const trimmed = list.map((b) => ({
+        ...b,
+        image: b.image.startsWith("data:image/") && b.image.length > 50000 ? "" : b.image,
+        gallery: (b.gallery || []).map((img) => (img.startsWith("data:image/") && img.length > 50000 ? "" : img)).filter(Boolean),
+      }));
+      localStorage.setItem("cc_buildings", JSON.stringify(trimmed));
+    } catch (innerError) {
+      console.error("Failed to write trimmed buildings to LocalStorage:", innerError);
+    }
   }
 }

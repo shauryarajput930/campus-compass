@@ -10,10 +10,11 @@ import {
   persistHomeBackground,
   DEFAULT_HOME_BACKGROUND,
   compressHomeBackgroundImage,
+  BUILDINGS_CHANGED_EVENT,
 } from "@/lib/api";
 import type { Building } from "@/lib/mock-data";
 import { useAuth } from "@/lib/auth-context";
-import { academicPrograms, buildings as defaultBuildings, departments } from "@/lib/mock-data";
+import { academicPrograms, departments } from "@/lib/mock-data";
 import { Building2, Users, Search, Layers, Plus, Trash2, Edit3, X, ShieldCheck, LogOut, Upload, MapPinned, Filter, BarChart3, Flag, Save, Menu } from "lucide-react";
 import { CampusMap } from "@/components/campus-map";
 
@@ -49,16 +50,35 @@ function AdminDashboard() {
 
   useEffect(() => { if (!user || user.role !== "admin") nav({ to: "/admin" }); }, [user, nav]);
   useEffect(() => {
-    getBuildings()
-      .then((buildings) => {
-        const loadedBuildings = buildings.length ? buildings : defaultBuildings;
-        setB(loadedBuildings);
-        setCoordinateTargetId(loadedBuildings[0]?.id ?? "");
-      })
-      .catch(() => {
-        setB(defaultBuildings);
-        setCoordinateTargetId(defaultBuildings[0]?.id ?? "");
-      });
+    let active = true;
+    const load = () => {
+      getBuildings()
+        .then((buildings) => {
+          if (active) {
+            setB(buildings);
+            if (buildings.length > 0) {
+              setCoordinateTargetId((prev) => (buildings.some((item) => item.id === prev) ? prev : buildings[0].id));
+            } else {
+              setCoordinateTargetId("");
+            }
+          }
+        })
+        .catch(() => {
+          if (active) setB([]);
+        });
+    };
+
+    load();
+
+    const onChanged = () => load();
+    window.addEventListener(BUILDINGS_CHANGED_EVENT, onChanged);
+    window.addEventListener("storage", onChanged);
+
+    return () => {
+      active = false;
+      window.removeEventListener(BUILDINGS_CHANGED_EVENT, onChanged);
+      window.removeEventListener("storage", onChanged);
+    };
   }, []);
   useEffect(() => {
     Promise.all([getAdminUsers(), getReports(), getAdminAnalytics(), getSiteSettings()]).then(([nextUsers, nextReports, nextAnalytics, nextSettings]) => {
@@ -111,7 +131,7 @@ function AdminDashboard() {
       setCoordinateDraft(null);
     } catch {
       const buildings = await getBuildings();
-      setB(buildings.length ? buildings : defaultBuildings);
+      setB(buildings);
       setCoordinateDraft(null);
     } finally {
       setCoordinateSaving(false);
@@ -312,9 +332,14 @@ function AdminDashboard() {
           value={editing}
           onClose={() => { setEditing(null); setCreating(false); }}
           onSave={async (data) => {
-            if (editing) await updateBuilding(editing.id, data);
-            else await createBuilding({ ...data, id: data.id || "b_" + Date.now() });
-            setEditing(null); setCreating(false); refresh();
+            if (editing) {
+              await updateBuilding(editing.id, data);
+            } else {
+              await createBuilding({ ...data, id: data.id || "b_" + Date.now() });
+            }
+            setEditing(null);
+            setCreating(false);
+            await refresh();
           }}
         />
       )}
@@ -332,7 +357,29 @@ function AdminDashboard() {
             </div>
             <div className="mt-6 flex justify-end gap-2">
               <button type="button" onClick={() => setDeleteBuildingTarget(null)} disabled={deleteBuildingSaving} className="rounded-lg border border-border px-4 py-2 text-sm">Cancel</button>
-              <button type="button" disabled={deleteBuildingSaving} onClick={async () => { if (!deleteBuildingTarget) return; setDeleteBuildingSaving(true); try { await deleteBuilding(deleteBuildingTarget.id); setDeleteBuildingTarget(null); await refresh(); } catch (error) { console.error("Failed to delete building:", error); window.alert("Unable to delete this building. Check that your admin session is still valid."); } finally { setDeleteBuildingSaving(false); } }} className="inline-flex items-center gap-2 rounded-lg bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground hover:bg-destructive/90 disabled:opacity-60"><Trash2 className="h-4 w-4" /> {deleteBuildingSaving ? "Deleting..." : "Delete permanently"}</button>
+              <button
+                type="button"
+                disabled={deleteBuildingSaving}
+                onClick={async () => {
+                  if (!deleteBuildingTarget) return;
+                  setDeleteBuildingSaving(true);
+                  try {
+                    const targetId = deleteBuildingTarget.id;
+                    await deleteBuilding(targetId);
+                    setB((current) => current.filter((item) => item.id !== targetId));
+                    setDeleteBuildingTarget(null);
+                    await refresh();
+                  } catch (error) {
+                    console.error("Failed to delete building:", error);
+                    window.alert("Unable to delete this building. Please try again.");
+                  } finally {
+                    setDeleteBuildingSaving(false);
+                  }
+                }}
+                className="inline-flex items-center gap-2 rounded-lg bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground hover:bg-destructive/90 disabled:opacity-60"
+              >
+                <Trash2 className="h-4 w-4" /> {deleteBuildingSaving ? "Deleting..." : "Delete permanently"}
+              </button>
             </div>
           </div>
         </div>
@@ -385,10 +432,12 @@ function AddUserDialog({ onClose, onCreated }: { onClose: () => void; onCreated:
 
 function BuildingEditor({ value, onClose, onSave }: { value: Building | null; onClose: () => void; onSave: (b: Building) => void }) {
   const [d, setD] = useState<Building>(value ?? {
-  id: "", name: "", code: "", icon: "", department: departments[0], programs: [departments[0]], description: "",
+    id: "", name: "", code: "", icon: "", department: departments[0], programs: [departments[0]], description: "",
     openingTime: "9:00 AM – 5:00 PM", facilities: [], image: "",
     gallery: [], category: "academic", lat: 26.45016, lng: 80.19200, floors: 1, rooms: [],
   });
+
+  const [customProgramInput, setCustomProgramInput] = useState("");
 
   const handleFile = async (file: File) => {
     const reader = new FileReader();
@@ -438,9 +487,32 @@ function BuildingEditor({ value, onClose, onSave }: { value: Building | null; on
     setD((prev) => ({ ...prev, rooms: prev.rooms.filter((_, i) => i !== index) }));
   };
 
-  const selectedPrograms = d.programs?.length ? d.programs : [d.department];
+  const selectedPrograms = useMemo(() => {
+    if (d.programs?.length) return d.programs;
+    if (d.department?.trim()) return d.department.split(",").map((s) => s.trim()).filter(Boolean);
+    return [departments[0]];
+  }, [d.programs, d.department]);
+
   const updatePrograms = (programs: string[]) => {
-    setD((prev) => ({ ...prev, programs, department: programs.join(", ") || departments[0] }));
+    setD((prev) => ({
+      ...prev,
+      programs,
+      department: programs[0] || prev.department || departments[0],
+    }));
+  };
+
+  const addCustomProgram = (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    if (!selectedPrograms.includes(trimmed)) {
+      updatePrograms([...selectedPrograms, trimmed]);
+    }
+    setCustomProgramInput("");
+  };
+
+  const removeProgram = (programToRemove: string) => {
+    const next = selectedPrograms.filter((p) => p !== programToRemove);
+    updatePrograms(next);
   };
 
   return (
@@ -467,18 +539,84 @@ function BuildingEditor({ value, onClose, onSave }: { value: Building | null; on
                 {d.icon && <button type="button" onClick={() => setD((prev) => ({ ...prev, icon: "" }))} className="rounded-lg border border-border px-2 py-2 text-xs text-muted-foreground hover:text-destructive">Remove</button>}
               </div>
             </div>
-            <label className="block md:col-span-2"><span className="text-xs text-muted-foreground">Courses / programs</span>
-              <select
-                multiple
-                size={6}
-                value={selectedPrograms}
-                onChange={(event) => updatePrograms(Array.from(event.target.selectedOptions, (option) => option.value))}
-                className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-              >
-                {departments.map((program) => <option key={program} value={program}>{program}</option>)}
-              </select>
-              <span className="mt-1 block text-[11px] text-muted-foreground">Use Ctrl/Cmd to select multiple courses for one building.</span>
-            </label>
+            <div className="block md:col-span-2 space-y-2">
+              <span className="text-xs text-muted-foreground">Courses / programs</span>
+
+              {/* Active Program Badges */}
+              <div className="flex flex-wrap gap-1.5 rounded-lg border border-border bg-background/50 p-2 min-h-11 items-center">
+                {selectedPrograms.length === 0 ? (
+                  <span className="text-xs text-muted-foreground italic">No courses/programs added yet.</span>
+                ) : (
+                  selectedPrograms.map((program) => (
+                    <span
+                      key={program}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
+                    >
+                      {program}
+                      <button
+                        type="button"
+                        onClick={() => removeProgram(program)}
+                        className="rounded-full p-0.5 hover:bg-primary/20 hover:text-destructive transition-colors"
+                        title={`Remove ${program}`}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))
+                )}
+              </div>
+
+              {/* Custom Program Text Input */}
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={customProgramInput}
+                  onChange={(e) => setCustomProgramInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addCustomProgram(customProgramInput);
+                    }
+                  }}
+                  placeholder="Type custom course/program (e.g. B.Tech - Robotics & Automation)..."
+                  className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => addCustomProgram(customProgramInput)}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
+                >
+                  <Plus className="h-3.5 w-3.5" /> Add custom
+                </button>
+              </div>
+
+              {/* Quick Select Standard Programs */}
+              <div className="mt-2">
+                <span className="mb-1 block text-[11px] text-muted-foreground">
+                  Or pick from standard campus programs:
+                </span>
+                <select
+                  multiple
+                  size={4}
+                  value={selectedPrograms}
+                  onChange={(event) => {
+                    const picked = Array.from(event.target.selectedOptions, (option) => option.value);
+                    const customOnly = selectedPrograms.filter((p) => !departments.includes(p));
+                    updatePrograms(Array.from(new Set([...picked, ...customOnly])));
+                  }}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs"
+                >
+                  {departments.map((program) => (
+                    <option key={program} value={program}>
+                      {program}
+                    </option>
+                  ))}
+                </select>
+                <span className="mt-1 block text-[11px] text-muted-foreground">
+                  Hold Ctrl / Cmd to select multiple courses from the list, or type any custom program text above.
+                </span>
+              </div>
+            </div>
             <label className="block md:col-span-2"><span className="text-xs text-muted-foreground">Description</span>
               <textarea value={d.description} onChange={(e) => setD({ ...d, description: e.target.value })} rows={3} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" /></label>
             <label className="block"><span className="text-xs text-muted-foreground">Opening time</span>
