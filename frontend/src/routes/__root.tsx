@@ -113,6 +113,7 @@ function ChromeShell() {
   );
   const bypassLocationGate = bare || isAuthPage;
   const [isLoading, setIsLoading] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
   const [locationState, setLocationState] = useState<"checking" | "granted" | "blocked">("checking");
 
   const requestLocation = () => {
@@ -129,13 +130,16 @@ function ChromeShell() {
   };
 
   useEffect(() => {
+    setIsMounted(true);
     const timer = window.setTimeout(() => setIsLoading(false), 900);
     return () => window.clearTimeout(timer);
   }, []);
 
-  useEffect(() => { requestLocation(); }, []);
+  useEffect(() => {
+    if (isMounted) requestLocation();
+  }, [isMounted]);
 
-  if (!bypassLocationGate && locationState !== "granted") {
+  if (isMounted && !bypassLocationGate && locationState !== "granted") {
     return (
       <div className="mesh-bg flex min-h-screen items-center justify-center px-4 py-8">
         <div className="w-full max-w-lg overflow-hidden rounded-3xl border border-border bg-card shadow-soft">

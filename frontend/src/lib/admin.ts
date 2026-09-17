@@ -2,14 +2,14 @@ import { api } from "./api";
 
 export type ManagedUser = { id: string; name: string; email: string; role: "user" | "admin"; active: boolean; createdAt?: string };
 export type AdminReport = { id: string; buildingId: string; buildingName?: string; userName?: string; userEmail?: string; category: string; message: string; status: "pending" | "approved" | "rejected" | "resolved"; createdAt: string };
-export type SiteSettings = { contactEmail: string; contactPhone: string; instagram: string; linkedin: string; twitter: string };
+export type SiteSettings = { homeBackground?: string; contactEmail: string; contactPhone: string; instagram: string; linkedin: string; twitter: string };
 export type AdminAnalytics = { totalUsers: number; activeUsers: number; reports: number; favorites: { buildingId: string; count: number }[]; topSearches: { label: string; count: number }[]; topRoutes: { label: string; count: number }[]; dailyUsage: { label: string; value: number }[] };
 
 const mockUsers: ManagedUser[] = [
   { id: "u_demo_1", name: "Demo Student", email: "student@psit.ac.in", role: "user", active: true },
   { id: "u_demo_2", name: "Campus Admin", email: "admin@psit.ac.in", role: "admin", active: true },
 ];
-const defaultSettings: SiteSettings = { contactEmail: "support@campuscompass.in", contactPhone: "+91 1800 123 4567", instagram: "https://instagram.com/psitkanpur", linkedin: "https://linkedin.com/school/psit-kanpur", twitter: "https://x.com/psitkanpur" };
+const defaultSettings: SiteSettings = { homeBackground: "", contactEmail: "support@campuscompass.in", contactPhone: "+91 1800 123 4567", instagram: "https://instagram.com/psitkanpur", linkedin: "https://linkedin.com/school/psit-kanpur", twitter: "https://x.com/psitkanpur" };
 const mockKey = "cc_admin_";
 const adminMemoryCache: Record<string, unknown> = {};
 

@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 
 const SiteSettingsSchema = new mongoose.Schema({
   key: { type: String, unique: true, default: "main" },
+  homeBackground: String,
   contactEmail: String,
   contactPhone: String,
   instagram: String,

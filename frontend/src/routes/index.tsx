@@ -2,7 +2,8 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { ArrowRight, Search, MapPinned, Route as RouteIcon, Camera, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getHomeBackground } from "@/lib/api";
+import { getHomeBackground, DEFAULT_HOME_BACKGROUND } from "@/lib/api";
+import { getSiteSettings } from "@/lib/admin";
 import type { Building } from "@/lib/mock-data";
 import { stats } from "@/lib/mock-data";
 import { BuildingCard } from "@/components/building-card";
@@ -27,13 +28,22 @@ function Landing() {
     nearbyLab: "Academic Block",
     bestRoute: "North Gate",
   });
-  const [heroBackground, setHeroBackground] = useState<string>(getHomeBackground());
+  const [heroBackground, setHeroBackground] = useState<string>(DEFAULT_HOME_BACKGROUND);
   const nav = useNavigate();
 
   useEffect(() => {
-    const syncBackground = () => setHeroBackground(getHomeBackground());
-    syncBackground();
+    let active = true;
+    setHeroBackground(getHomeBackground());
 
+    getSiteSettings()
+      .then((settings) => {
+        if (active && settings.homeBackground) {
+          setHeroBackground(settings.homeBackground);
+        }
+      })
+      .catch(() => { /* use default/local fallback */ });
+
+    const syncBackground = () => setHeroBackground(getHomeBackground());
     const onCustomEvent = () => syncBackground();
     const onStorage = (event: StorageEvent) => {
       if (event.key === "cc_home_background") syncBackground();
@@ -43,6 +53,7 @@ function Landing() {
     window.addEventListener("storage", onStorage);
 
     return () => {
+      active = false;
       window.removeEventListener("cc-home-background-changed", onCustomEvent);
       window.removeEventListener("storage", onStorage);
     };

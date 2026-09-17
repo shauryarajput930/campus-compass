@@ -29,7 +29,11 @@ function AdminDashboard() {
   const [b, setB] = useState<Building[]>([]);
   const [editing, setEditing] = useState<Building | null>(null);
   const [creating, setCreating] = useState(false);
-  const [homeBackground, setHomeBackground] = useState<string>(getHomeBackground());
+  const [homeBackground, setHomeBackground] = useState<string>(DEFAULT_HOME_BACKGROUND);
+
+  useEffect(() => {
+    setHomeBackground(getHomeBackground());
+  }, []);
   const [homeBackgroundSaved, setHomeBackgroundSaved] = useState(false);
   const [homeBackgroundSaving, setHomeBackgroundSaving] = useState(false);
   const [coordinateTargetId, setCoordinateTargetId] = useState("");
@@ -86,9 +90,24 @@ function AdminDashboard() {
     };
   }, []);
   useEffect(() => {
-    Promise.all([getAdminUsers(), getReports(), getAdminAnalytics(), getSiteSettings()]).then(([nextUsers, nextReports, nextAnalytics, nextSettings]) => {
-      setUsers(nextUsers); setReports(nextReports); setAnalytics(nextAnalytics); setSettings(nextSettings);
-    });
+    let active = true;
+    Promise.allSettled([getAdminUsers(), getReports(), getAdminAnalytics(), getSiteSettings()])
+      .then(([usersRes, reportsRes, analyticsRes, settingsRes]) => {
+        if (!active) return;
+        if (usersRes.status === "fulfilled") setUsers(usersRes.value);
+        if (reportsRes.status === "fulfilled") setReports(reportsRes.value);
+        if (analyticsRes.status === "fulfilled") setAnalytics(analyticsRes.value);
+        if (settingsRes.status === "fulfilled") {
+          setSettings(settingsRes.value);
+          if (settingsRes.value.homeBackground) {
+            setHomeBackground(settingsRes.value.homeBackground);
+          }
+        }
+      })
+      .catch((err) => {
+        console.warn("Failed loading admin dashboard data:", err);
+      });
+    return () => { active = false; };
   }, []);
 
   const refresh = () => getBuildings().then(setB);
@@ -97,6 +116,7 @@ function AdminDashboard() {
     try {
       const next = persistHomeBackground(homeBackground);
       setHomeBackground(next);
+      await updateSiteSettings({ ...settings, homeBackground: next });
       setHomeBackgroundSaved(true);
       setTimeout(() => setHomeBackgroundSaved(false), 2200);
     } catch (err) {

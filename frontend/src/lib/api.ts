@@ -9,7 +9,8 @@ import { buildings as mockBuildings, normalizeDepartmentName, type Building } fr
  * When VITE_API_URL is unset, the client falls back to local mock data
  * so the frontend runs without a backend.
  */
-const BASE_URL = import.meta.env.VITE_API_URL as string | undefined;
+const rawBaseUrl = import.meta.env.VITE_API_URL as string | undefined;
+const BASE_URL = rawBaseUrl ? rawBaseUrl.trim().replace(/\/+$/, "") : undefined;
 export const HOME_BACKGROUND_KEY = "cc_home_background";
 export const BUILDINGS_CHANGED_EVENT = "cc-buildings-changed";
 const BUILDINGS_CHANGED_KEY = "cc_buildings_changed";
