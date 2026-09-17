@@ -15,34 +15,33 @@ import favoriteRoutes from "./src/routes/favorites.js";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
-const normalizeOrigin = (url) => (url ? url.trim().replace(/\/+$/, "") : "");
-
-const configuredOrigins = process.env.CLIENT_ORIGIN
-  ? process.env.CLIENT_ORIGIN.split(",").map(normalizeOrigin).filter(Boolean)
-  : [];
+// 1. CORS Configuration (placed BEFORE all body parsers and routes)
+const allowedOrigins = [
+  "https://psit-campus-compass.netlify.app",
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "http://localhost:5000",
+];
 
 const corsOptions = {
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
 
-    const cleanOrigin = normalizeOrigin(origin);
+    const cleanOrigin = origin.trim().replace(/\/+$/, "");
 
-    if (configuredOrigins.length === 0 || configuredOrigins.includes("*")) {
-      return callback(null, true);
-    }
-
-    if (configuredOrigins.includes(cleanOrigin)) {
-      return callback(null, true);
-    }
-
-    if (cleanOrigin.endsWith(".netlify.app") || cleanOrigin.includes("localhost") || cleanOrigin.includes("127.0.0.1")) {
+    if (
+      allowedOrigins.includes(cleanOrigin) ||
+      cleanOrigin.endsWith(".netlify.app") ||
+      cleanOrigin.includes("localhost") ||
+      cleanOrigin.includes("127.0.0.1")
+    ) {
       return callback(null, true);
     }
 
     return callback(null, true);
   },
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"],
   optionsSuccessStatus: 200,
 };
@@ -50,9 +49,11 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
 
+// 2. Body Parser & Static Middleware
 app.use(express.json({ limit: "5mb" }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
+// 3. API Routes
 app.get("/", (_, res) => res.json({ ok: true, service: "campus-compass-api" }));
 app.use("/api/auth", authRoutes);
 app.use("/api/buildings", buildingRoutes);
