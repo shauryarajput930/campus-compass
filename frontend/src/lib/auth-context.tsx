@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useAuth as useClerkAuth, useUser } from "@clerk/clerk-react";
-import type { AuthUser } from "./api";
+import { setClerkTokenGetter, type AuthUser } from "./api";
 
 export function checkIsAdmin(roleMeta: unknown, email: string | undefined): boolean {
   if (roleMeta === "admin") return true;
@@ -25,6 +25,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { getToken, signOut } = useClerkAuth();
   const { user: clerkUser, isLoaded } = useUser();
   const [user, setUser] = useState<AuthUser | null>(null);
+
+  useEffect(() => {
+    setClerkTokenGetter(getToken);
+    return () => setClerkTokenGetter(null);
+  }, [getToken]);
 
   useEffect(() => {
     if (!isLoaded) return;

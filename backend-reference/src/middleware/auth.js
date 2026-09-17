@@ -31,13 +31,20 @@ function isAdminEmail(email) {
 }
 
 export async function auth(req, res, next) {
+  if (req.method === "OPTIONS") return next();
+
   const h = req.headers.authorization;
-  if (!h?.startsWith("Bearer ")) return res.status(401).json({ error: "No token" });
+  console.log(`[auth-debug] Endpoint: ${req.method} ${req.originalUrl} | AuthHeader: ${h ? "Present" : "Missing"}`);
+
+  if (!h?.startsWith("Bearer ")) return res.status(401).json({ error: "No token provided" });
   const token = h.slice(7);
 
   if (process.env.CLERK_SECRET_KEY) {
     try {
-      const claims = await verifyToken(token, { secretKey: process.env.CLERK_SECRET_KEY });
+      const claims = await verifyToken(token, {
+        secretKey: process.env.CLERK_SECRET_KEY,
+        clockSkewInMs: 30000,
+      });
       let userRole = "user";
       let userEmail = getEmailFromClaims(claims);
 
@@ -60,7 +67,7 @@ export async function auth(req, res, next) {
           }
           userEmail = primaryEmail;
         } catch (clerkFetchErr) {
-          console.warn("Unable to fetch Clerk user details:", clerkFetchErr.message);
+          console.warn("[auth-debug] Unable to fetch Clerk user details:", clerkFetchErr.message);
         }
       }
 
@@ -71,6 +78,10 @@ export async function auth(req, res, next) {
         }
       }
 
+      console.log(
+        `[auth-debug] Verification: Success | ClerkUserID: ${claims.sub} | Role: ${userRole} | Endpoint: ${req.method} ${req.originalUrl}`
+      );
+
       req.user = {
         id: claims.sub,
         email: userEmail,
@@ -78,25 +89,32 @@ export async function auth(req, res, next) {
       };
       return next();
     } catch (clerkErr) {
+      console.warn(`[auth-debug] Verification: Failed | Error: ${clerkErr.message} | Endpoint: ${req.method} ${req.originalUrl}`);
       if (process.env.JWT_SECRET) {
         try {
           req.user = jwt.verify(token, process.env.JWT_SECRET);
           return next();
         } catch { /* proceed to 401 */ }
       }
-      return res.status(401).json({ error: "Invalid token" });
+      return res.status(401).json({ error: "Invalid token: " + clerkErr.message });
     }
   }
 
   try {
     req.user = jwt.verify(token, process.env.JWT_SECRET || "fallback_secret");
+    console.log(`[auth-debug] JWT Verification: Success | Role: ${req.user?.role} | Endpoint: ${req.method} ${req.originalUrl}`);
     return next();
-  } catch {
+  } catch (jwtErr) {
+    console.warn(`[auth-debug] JWT Verification: Failed | Error: ${jwtErr.message} | Endpoint: ${req.method} ${req.originalUrl}`);
     return res.status(401).json({ error: "Invalid token" });
   }
 }
 
 export function requireAdmin(req, res, next) {
-  if (req.user?.role !== "admin") return res.status(403).json({ error: "Admin only" });
+  if (req.method === "OPTIONS") return next();
+  if (req.user?.role !== "admin") {
+    console.warn(`[auth-debug] Access Denied: User role '${req.user?.role}' is not admin | Endpoint: ${req.method} ${req.originalUrl}`);
+    return res.status(403).json({ error: "Admin access required" });
+  }
   next();
 }

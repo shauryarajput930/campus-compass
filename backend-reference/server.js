@@ -49,6 +49,25 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
 
+// Ensure CORS headers are attached on all responses (including 401/403 error responses and preflights)
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin) {
+    const cleanOrigin = origin.trim().replace(/\/+$/, "");
+    res.setHeader("Access-Control-Allow-Origin", cleanOrigin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Accept, Origin");
+  } else {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+  }
+
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+  next();
+});
+
 // 2. Body Parser & Static Middleware
 app.use(express.json({ limit: "5mb" }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
