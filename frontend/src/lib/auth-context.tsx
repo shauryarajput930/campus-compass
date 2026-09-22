@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useAuth as useClerkAuth, useUser } from "@clerk/clerk-react";
-import type { AuthUser } from "./api";
+import { setClerkTokenGetter, type AuthUser } from "./api";
 
 export function checkIsAdmin(roleMeta: unknown, email: string | undefined): boolean {
   if (roleMeta === "admin") return true;
@@ -15,6 +15,7 @@ export function checkIsAdmin(roleMeta: unknown, email: string | undefined): bool
 
 interface AuthCtx {
   user: AuthUser | null;
+  isLoaded: boolean;
   setSession: (u: AuthUser | null, token: string | null) => void;
   logout: () => void;
 }
@@ -25,6 +26,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { getToken, signOut } = useClerkAuth();
   const { user: clerkUser, isLoaded } = useUser();
   const [user, setUser] = useState<AuthUser | null>(null);
+
+  useEffect(() => {
+    setClerkTokenGetter(getToken);
+    return () => setClerkTokenGetter(null);
+  }, [getToken]);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -67,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void signOut();
   };
 
-  return <Ctx.Provider value={{ user, setSession, logout }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ user, isLoaded, setSession, logout }}>{children}</Ctx.Provider>;
 }
 
 export function useAuth() {

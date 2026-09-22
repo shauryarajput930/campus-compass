@@ -24,7 +24,7 @@ export const Route = createFileRoute("/admin/dashboard")({
 });
 
 function AdminDashboard() {
-  const { user, logout } = useAuth();
+  const { user, isLoaded, logout } = useAuth();
   const nav = useNavigate();
   const [b, setB] = useState<Building[]>([]);
   const [editing, setEditing] = useState<Building | null>(null);
@@ -55,9 +55,17 @@ function AdminDashboard() {
   const [deleteUser, setDeleteUser] = useState<ManagedUser | null>(null);
   const [deleteSaving, setDeleteSaving] = useState(false);
   const [addUserOpen, setAddUserOpen] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => { if (!user || user.role !== "admin") nav({ to: "/admin" }); }, [user, nav]);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted && isLoaded && (!user || user.role !== "admin")) {
+      nav({ to: "/admin" });
+    }
+  }, [mounted, isLoaded, user, nav]);
   useEffect(() => {
     let active = true;
     const load = () => {
@@ -175,6 +183,22 @@ function AdminDashboard() {
       setCoordinateSaving(false);
     }
   };
+
+  if (!mounted || !isLoaded) {
+    return (
+      <div className="mesh-bg flex min-h-screen items-center justify-center p-6 text-center">
+        <p className="text-sm text-muted-foreground">Loading admin portal...</p>
+      </div>
+    );
+  }
+
+  if (mounted && isLoaded && (!user || user.role !== "admin")) {
+    return (
+      <div className="mesh-bg flex min-h-screen items-center justify-center p-6 text-center">
+        <p className="text-sm text-muted-foreground">Redirecting to admin login...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">

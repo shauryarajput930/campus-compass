@@ -1,10 +1,16 @@
 import { QRCodeSVG } from "qrcode.react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Download, Copy, Check } from "lucide-react";
 
 export function BuildingQRCode({ id, name }: { id: string; name: string }) {
-  const url = typeof window !== "undefined" ? `${window.location.origin}/buildings/${id}` : `/buildings/${id}`;
+  const [origin, setOrigin] = useState("");
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
+
+  const url = origin ? `${origin}/buildings/${id}` : `/buildings/${id}`;
 
   const download = () => {
     const svg = document.getElementById(`qr-${id}`);

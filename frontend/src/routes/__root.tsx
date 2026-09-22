@@ -77,7 +77,7 @@ function RootShell({ children }: { children: ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <HeadContent />
       </head>
-      <body>{children}<Scripts /></body>
+      <body suppressHydrationWarning>{children}<Scripts /></body>
     </html>
   );
 }
@@ -114,6 +114,7 @@ function ChromeShell() {
   const bypassLocationGate = bare || isAuthPage;
   const [isLoading, setIsLoading] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
   const [locationState, setLocationState] = useState<"checking" | "granted" | "blocked">("checking");
 
   const requestLocation = () => {
@@ -123,63 +124,36 @@ function ChromeShell() {
     }
     setLocationState("checking");
     navigator.geolocation.getCurrentPosition(
-      () => setLocationState("granted"),
-      () => setLocationState("blocked"),
+      () => {
+        setLocationState("granted");
+        try { localStorage.setItem("cc_location_permission", "granted"); } catch {}
+      },
+      () => {
+        setLocationState("blocked");
+      },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 },
     );
   };
 
   useEffect(() => {
     setIsMounted(true);
+    try {
+      const savedPerm = localStorage.getItem("cc_location_permission");
+      const savedDismiss = localStorage.getItem("cc_location_dismissed");
+      if (savedPerm === "granted") setLocationState("granted");
+      if (savedDismiss === "true") setDismissed(true);
+    } catch {}
+
     const timer = window.setTimeout(() => setIsLoading(false), 900);
     return () => window.clearTimeout(timer);
   }, []);
 
-  useEffect(() => {
-    if (isMounted) requestLocation();
-  }, [isMounted]);
+  const handleDismiss = () => {
+    setDismissed(true);
+    try { localStorage.setItem("cc_location_dismissed", "true"); } catch {}
+  };
 
-  if (isMounted && !bypassLocationGate && locationState !== "granted") {
-    return (
-      <div className="mesh-bg flex min-h-screen items-center justify-center px-4 py-8">
-        <div className="w-full max-w-lg overflow-hidden rounded-3xl border border-border bg-card shadow-soft">
-          <div className="relative overflow-hidden bg-slate-950 px-8 pb-10 pt-9 text-white">
-            <div className="absolute -right-12 -top-16 h-44 w-44 rounded-full border border-cyan-300/20" />
-            <div className="absolute -bottom-24 left-1/2 h-48 w-48 rounded-full border border-blue-300/10" />
-            <div className="relative grid h-16 w-16 place-items-center rounded-2xl bg-cyan-400 text-slate-950 shadow-[0_0_34px_rgba(34,211,238,0.35)]">
-              <MapPin className="h-8 w-8" />
-            </div>
-            <div className="relative mt-7 text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">Campus Compass</div>
-            <h1 className="relative mt-2 font-display text-3xl font-bold">Location access</h1>
-            <p className="relative mt-2 max-w-md text-sm leading-6 text-slate-300">Allow location to unlock turn-by-turn campus directions and nearby building navigation, or explore as guest.</p>
-          </div>
-          <div className="p-8">
-            <div className="grid gap-3 sm:grid-cols-3">
-              {[
-                { icon: Navigation, label: "Live directions" },
-                { icon: MapPin, label: "Nearby places" },
-                { icon: ShieldCheck, label: "Used securely" },
-              ].map((item) => <div key={item.label} className="rounded-xl border border-border bg-background p-3 text-center"><item.icon className="mx-auto h-4 w-4 text-primary" /><div className="mt-2 text-xs text-muted-foreground">{item.label}</div></div>)}
-            </div>
-          {locationState === "checking" ? (
-            <div className="mt-6 text-center space-y-3">
-              <p className="text-sm text-muted-foreground">Waiting for location permission…</p>
-              <button onClick={() => setLocationState("granted")} className="text-xs text-primary hover:underline">Continue without location</button>
-            </div>
-          ) : (
-            <>
-              <p className="mt-6 text-center text-sm text-muted-foreground">Allow location access in your browser, or continue without location.</p>
-              <div className="mt-6 flex flex-col gap-2">
-                <button onClick={requestLocation} className="btn-hero btn-hero-hover w-full px-5 py-3 text-sm">Allow location and continue</button>
-                <button onClick={() => setLocationState("granted")} className="rounded-xl border border-border py-2.5 text-xs text-muted-foreground transition hover:bg-secondary hover:text-foreground">Explore Campus without location</button>
-              </div>
-            </>
-          )}
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const showLocationModal = isMounted && !bypassLocationGate && !dismissed && locationState !== "granted";
 
   return (
     <div className="mesh-bg flex min-h-screen flex-col">
@@ -194,6 +168,53 @@ function ChromeShell() {
           <div className="startup-loader__line" aria-hidden="true"><span /></div>
         </div>
       )}
+
+      {showLocationModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-lg overflow-hidden rounded-3xl border border-border bg-card shadow-glow">
+            <div className="relative overflow-hidden bg-slate-950 px-8 pb-8 pt-8 text-white">
+              <div className="absolute -right-12 -top-16 h-44 w-44 rounded-full border border-cyan-300/20" />
+              <div className="absolute -bottom-24 left-1/2 h-48 w-48 rounded-full border border-blue-300/10" />
+              <div className="relative grid h-14 w-14 place-items-center rounded-2xl bg-cyan-400 text-slate-950 shadow-[0_0_34px_rgba(34,211,238,0.35)]">
+                <MapPin className="h-7 w-7" />
+              </div>
+              <div className="relative mt-5 text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">Campus Compass</div>
+              <h2 className="relative mt-1 font-display text-2xl font-bold">Enable Location Access</h2>
+              <p className="relative mt-2 max-w-md text-xs leading-5 text-slate-300">Allow location to unlock live turn-by-turn campus directions and nearby building navigation, or explore as guest.</p>
+            </div>
+            <div className="p-6">
+              <div className="grid gap-3 sm:grid-cols-3">
+                {[
+                  { icon: Navigation, label: "Live directions" },
+                  { icon: MapPin, label: "Nearby places" },
+                  { icon: ShieldCheck, label: "Used securely" },
+                ].map((item) => (
+                  <div key={item.label} className="rounded-xl border border-border bg-background p-3 text-center">
+                    <item.icon className="mx-auto h-4 w-4 text-primary" />
+                    <div className="mt-1.5 text-[11px] text-muted-foreground">{item.label}</div>
+                  </div>
+                ))}
+              </div>
+              {locationState === "checking" ? (
+                <div className="mt-5 text-center space-y-3">
+                  <p className="text-xs text-muted-foreground">Checking location permission…</p>
+                  <button onClick={requestLocation} className="btn-hero btn-hero-hover w-full px-5 py-2.5 text-xs">Prompt location permission</button>
+                  <button onClick={handleDismiss} className="text-xs text-primary hover:underline">Continue without location</button>
+                </div>
+              ) : (
+                <>
+                  <p className="mt-4 text-center text-xs text-muted-foreground">Allow location access in your browser, or continue without location.</p>
+                  <div className="mt-4 flex flex-col gap-2">
+                    <button onClick={requestLocation} className="btn-hero btn-hero-hover w-full px-5 py-2.5 text-xs font-semibold">Allow location and continue</button>
+                    <button onClick={handleDismiss} className="rounded-xl border border-border py-2 text-xs text-muted-foreground transition hover:bg-secondary hover:text-foreground">Explore Campus without location</button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {!bare && <Navbar />}
       <main className="flex-1">
         <Outlet />
