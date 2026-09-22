@@ -15,44 +15,51 @@ import favoriteRoutes from "./src/routes/favorites.js";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
-const normalizeOrigin = (url) => (url ? url.trim().replace(/\/+$/, "") : "");
+const allowedOrigins = [
+  process.env.CLIENT_ORIGIN,
+  "https://psit-campus-compass.netlify.app",
+].filter(Boolean);
 
-const configuredOrigins = process.env.CLIENT_ORIGIN
-  ? process.env.CLIENT_ORIGIN.split(",").map(normalizeOrigin).filter(Boolean)
-  : [];
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  const cleanOrigin = origin?.trim().replace(/\/+$/, "");
 
-const corsOptions = {
-  origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
+  console.log(
+    `[cors-debug] method=${req.method} origin=${cleanOrigin || "none"} url=${req.originalUrl || req.url}`
+  );
 
-    const cleanOrigin = normalizeOrigin(origin);
-
-    if (configuredOrigins.length === 0 || configuredOrigins.includes("*")) {
-      return callback(null, true);
+  if (!origin || allowedOrigins.includes(cleanOrigin)) {
+    if (cleanOrigin) {
+      res.setHeader("Access-Control-Allow-Origin", cleanOrigin);
     }
+  }
 
-    if (configuredOrigins.includes(cleanOrigin)) {
-      return callback(null, true);
-    }
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization, X-Requested-With, Accept, Origin"
+  );
+  res.setHeader("Access-Control-Max-Age", "86400");
+  res.setHeader("Vary", "Origin");
 
-    if (cleanOrigin.endsWith(".netlify.app") || cleanOrigin.includes("localhost") || cleanOrigin.includes("127.0.0.1")) {
-      return callback(null, true);
-    }
+  if (req.method === "OPTIONS") {
+    console.log(
+      `[cors-debug] preflight handled url=${req.originalUrl || req.url}`
+    );
+    return res.sendStatus(204);
+  }
 
-    return callback(null, true);
-  },
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"],
-  optionsSuccessStatus: 200,
-};
-
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
-
+  next();
+});
+// 2. Body Parser & Static Middleware
 app.use(express.json({ limit: "5mb" }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
+// 3. API Routes
 app.get("/", (_, res) => res.json({ ok: true, service: "campus-compass-api" }));
 app.use("/api/auth", authRoutes);
 app.use("/api/buildings", buildingRoutes);
