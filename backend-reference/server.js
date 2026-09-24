@@ -15,10 +15,18 @@ import favoriteRoutes from "./src/routes/favorites.js";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
-const allowedOrigins = [
-  process.env.CLIENT_ORIGIN,
+const rawOrigins = [
+  ...(process.env.CLIENT_ORIGIN ? process.env.CLIENT_ORIGIN.split(",") : []),
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "http://127.0.0.1:5173",
   "https://psit-campus-compass.netlify.app",
-].filter(Boolean);
+  "https://campus-compass.netlify.app",
+];
+
+const allowedOrigins = rawOrigins
+  .map((o) => (o ? o.trim().replace(/\/+$/, "") : ""))
+  .filter(Boolean);
 
 app.use((req, res, next) => {
   const origin = req.headers.origin;
@@ -56,7 +64,8 @@ app.use((req, res, next) => {
   next();
 });
 // 2. Body Parser & Static Middleware
-app.use(express.json({ limit: "5mb" }));
+app.use(express.json({ limit: "25mb" }));
+app.use(express.urlencoded({ limit: "25mb", extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // 3. API Routes

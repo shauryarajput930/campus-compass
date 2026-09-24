@@ -2,6 +2,7 @@ import { Router } from "express";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 import User from "../models/User.js";
 import { auth } from "../middleware/auth.js";
 
@@ -34,8 +35,26 @@ r.post("/login", async (req, res) => {
 });
 
 r.get("/me", auth, async (req, res) => {
-  const u = await User.findById(req.user.id).select("-password");
-  res.json(u);
+  try {
+    let u = null;
+    if (req.user?.id && mongoose.Types.ObjectId.isValid(req.user.id)) {
+      u = await User.findById(req.user.id).select("-password");
+    }
+    if (!u && req.user?.email) {
+      u = await User.findOne({ email: req.user.email.toLowerCase() }).select("-password");
+    }
+    if (!u) {
+      return res.json({
+        id: req.user?.id || req.user?.clerkId,
+        name: req.user?.email ? req.user.email.split("@")[0] : "Campus User",
+        email: req.user?.email || "",
+        role: req.user?.role || "user",
+      });
+    }
+    res.json(u);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ---- Google sign-in (verifies the Google ID token) ----

@@ -55,6 +55,7 @@ function AdminDashboard() {
   const [deleteUser, setDeleteUser] = useState<ManagedUser | null>(null);
   const [deleteSaving, setDeleteSaving] = useState(false);
   const [addUserOpen, setAddUserOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {

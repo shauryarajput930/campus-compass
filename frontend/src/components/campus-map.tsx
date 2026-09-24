@@ -270,19 +270,8 @@ export function CampusMap({
         bounds.extend([destinationLocation.lat, destinationLocation.lng]);
       }
 
-      // 5. Render Route Polyline Path
+      // 5. Render Route & Fit Map Bounds (Blue line removed per user request)
       if (routePath && routePath.length > 0) {
-        const polyline = L.polyline(routePath, {
-          color: "#2563eb",
-          weight: 7,
-          opacity: 0.95,
-          lineJoin: "round",
-          lineCap: "round",
-        }).addTo(map);
-
-        // Animate polyline stroke
-        polylineRef.current = polyline;
-
         const routeBounds = L.latLngBounds(routePath);
         map.fitBounds(routeBounds, { padding: [50, 50] });
       } else if (centerId) {

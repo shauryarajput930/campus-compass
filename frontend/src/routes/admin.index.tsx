@@ -1,7 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { SignIn, useClerk, useSignIn, useUser } from "@clerk/clerk-react";
 import { useEffect, useState } from "react";
-import { checkIsAdmin } from "@/lib/auth-context";
+import { checkIsAdmin, useAuth } from "@/lib/auth-context";
+import { login } from "@/lib/api";
 import { KeyRound, Mail, ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/admin/")({
@@ -10,8 +11,9 @@ export const Route = createFileRoute("/admin/")({
 });
 
 function AdminLogin() {
-  const { isLoaded, isSignedIn, user } = useUser();
-  const { signOut } = useClerk();
+  const { user: authUser, setSession, logout: appLogout } = useAuth();
+  const { isLoaded: clerkLoaded, isSignedIn: clerkSignedIn, user: clerkUser } = useUser();
+  const { signOut: clerkSignOut } = useClerk();
   const { isLoaded: signInLoaded, signIn, setActive } = useSignIn();
   const nav = useNavigate();
   const [mode, setMode] = useState<"login" | "reset" | "clerk">("login");
@@ -23,23 +25,48 @@ function AdminLogin() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  const userEmail = user?.primaryEmailAddress?.emailAddress || "";
-  const isAdmin = checkIsAdmin(user?.publicMetadata?.role, userEmail);
+  const userEmail = authUser?.email || clerkUser?.primaryEmailAddress?.emailAddress || "";
+  const isAdmin = authUser?.role === "admin" || checkIsAdmin(clerkUser?.publicMetadata?.role, userEmail);
+  const isUserSignedIn = Boolean(authUser || (clerkLoaded && clerkSignedIn));
+
+  const getClerkErrorMessage = (caught: unknown): string => {
+    if (typeof caught === "object" && caught !== null && "errors" in caught && Array.isArray((caught as { errors: unknown[] }).errors)) {
+      const first = (caught as { errors: Array<{ longMessage?: string; message?: string }> }).errors[0];
+      if (first?.longMessage) return first.longMessage;
+      if (first?.message) return first.message;
+    }
+    if (caught instanceof Error) return caught.message;
+    return "Could not sign in. Check your email and password.";
+  };
 
   const submitLogin = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!signInLoaded) return;
     setBusy(true);
     setError("");
+
     try {
-      const result = await signIn.create({ strategy: "password", identifier: email, password });
-      if (result.status !== "complete" || !result.createdSessionId) throw new Error("Admin sign-in needs another verification step.");
-      await setActive({ session: result.createdSessionId });
+      if (signInLoaded && signIn) {
+        try {
+          const result = await signIn.create({ strategy: "password", identifier: email, password });
+          if (result.status === "complete" && result.createdSessionId) {
+            await setActive({ session: result.createdSessionId });
+            return;
+          }
+        } catch {
+          /* Fall through to backend API login */
+        }
+      }
+
+      const res = await login(email, password);
+      if (res.user.role !== "admin") {
+        throw new Error("This account does not have admin privileges.");
+      }
+      setSession(res.user, res.token);
+      nav({ to: "/admin/dashboard", replace: true });
     } catch (caught) {
-      const msg = caught instanceof Error ? caught.message : "Could not sign in. Check your email and password.";
+      const msg = getClerkErrorMessage(caught);
       setError(msg);
-      // If password strategy fails or isn't enabled in Clerk, suggest standard Clerk login
-      if (msg.toLowerCase().includes("strategy") || msg.toLowerCase().includes("password")) {
+      if (msg.toLowerCase().includes("strategy") || msg.toLowerCase().includes("password") || msg.toLowerCase().includes("identifier") || msg.toLowerCase().includes("not found")) {
         setMode("clerk");
       }
     } finally {
@@ -56,7 +83,7 @@ function AdminLogin() {
       await signIn.create({ strategy: "reset_password_email_code", identifier: email });
       setResetSent(true);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not send the reset OTP.");
+      setError(getClerkErrorMessage(caught));
     } finally {
       setBusy(false);
     }
@@ -76,7 +103,7 @@ function AdminLogin() {
       setCode("");
       setNewPassword("");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not reset the password.");
+      setError(getClerkErrorMessage(caught));
     } finally {
       setBusy(false);
     }
@@ -89,12 +116,18 @@ function AdminLogin() {
   }, []);
 
   useEffect(() => {
-    if (mounted && isLoaded && isSignedIn && isAdmin) {
+    if (mounted && isUserSignedIn && isAdmin) {
       nav({ to: "/admin/dashboard", replace: true });
     }
-  }, [mounted, isLoaded, isSignedIn, isAdmin, nav]);
+  }, [mounted, isUserSignedIn, isAdmin, nav]);
 
-  if (!mounted || !isLoaded) {
+  const handleSignOut = async () => {
+    appLogout();
+    try { await clerkSignOut(); } catch {}
+    nav({ to: "/admin", replace: true });
+  };
+
+  if (!mounted || !clerkLoaded) {
     return (
       <div className="mesh-bg flex min-h-screen items-center justify-center px-4 py-10">
         <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-glow sm:p-8">
@@ -104,7 +137,7 @@ function AdminLogin() {
     );
   }
 
-  if (isLoaded && isSignedIn) {
+  if (isUserSignedIn) {
     if (isAdmin) {
       return (
         <div className="flex min-h-screen items-center justify-center p-4">
@@ -128,7 +161,7 @@ function AdminLogin() {
               Go to user dashboard
             </button>
             <button
-              onClick={() => signOut().then(() => nav({ to: "/admin", replace: true }))}
+              onClick={handleSignOut}
               className="rounded-xl border border-border px-4 py-2 text-sm text-muted-foreground transition hover:bg-muted"
             >
               Sign out & switch account

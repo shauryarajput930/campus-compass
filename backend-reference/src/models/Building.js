@@ -16,7 +16,7 @@ const BuildingSchema = new mongoose.Schema({
   facilities: [String],
   image: String,
   gallery: [String],
-  category: { type: String, enum: ["academic","hostel","sports","food","facility","admin"], default: "academic" },
+  category: { type: String, enum: ["academic","hostel","sports","food","facility","admin","medical"], default: "academic" },
   lat: Number, lng: Number,
   floors: { type: Number, default: 1 },
   rooms: [RoomSchema],

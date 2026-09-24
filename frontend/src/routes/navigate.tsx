@@ -482,25 +482,30 @@ function NavigatePage() {
 
               {/* Turn-by-Turn Steps */}
               {routeResult.steps.length > 0 && (
-                <div className="space-y-2 pt-2">
-                  <h4 className="text-xs font-bold text-foreground">Turn-by-Turn Directions</h4>
-                  <ul className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                <div className="space-y-2.5 pt-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold text-foreground uppercase tracking-wide">Turn-by-Turn Directions</h4>
+                    <span className="text-[10px] text-muted-foreground">{routeResult.steps.length} steps</span>
+                  </div>
+                  <ul className="custom-scrollbar scroll-smooth space-y-2 max-h-64 overflow-y-auto pr-2 focus:outline-none">
                     {routeResult.steps.map((step, idx) => (
                       <li
                         key={idx}
-                        className="flex items-start gap-2.5 rounded-xl border border-border/40 bg-background/60 p-2.5 text-xs text-foreground"
+                        className="flex items-start gap-3 rounded-xl border border-border/50 bg-background/80 p-3 text-xs text-foreground transition-all hover:border-primary/40 hover:bg-background/95"
                       >
-                        <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
+                        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-primary/10 text-[11px] font-bold text-primary shadow-xs">
                           {idx + 1}
                         </span>
-                        <div className="flex-1">
+                        <div className="flex-1 space-y-0.5">
                           <p
-                            className="leading-snug"
+                            className="leading-relaxed font-medium"
                             dangerouslySetInnerHTML={{ __html: step.instruction }}
                           />
-                          <span className="text-[10px] text-muted-foreground">
-                            {step.distanceMeters > 0 ? `${step.distanceMeters} m` : ""}
-                          </span>
+                          {step.distanceMeters > 0 && (
+                            <span className="inline-block rounded-md bg-secondary/80 px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                              {step.distanceMeters} m
+                            </span>
+                          )}
                         </div>
                       </li>
                     ))}

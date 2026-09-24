@@ -9,8 +9,12 @@ export function BuildingCard({ b, index = 0 }: { b: Building; index?: number }) 
   const [fav, setFav] = useState(false);
   const navigate = useNavigate();
   useEffect(() => {
-    const list: string[] = JSON.parse(localStorage.getItem("cc_favorites") || "[]");
-    setFav(list.includes(b.id));
+    try {
+      const list: string[] = JSON.parse(localStorage.getItem("cc_favorites") || "[]");
+      setFav(Array.isArray(list) && list.includes(b.id));
+    } catch {
+      setFav(false);
+    }
   }, [b.id]);
 
   return (

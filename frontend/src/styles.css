@@ -699,3 +699,32 @@
   justify-content: center;
 }
 
+/* Optimized Custom Scrollbar Utility */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-primary, #6366f1) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 9999px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-primary, #6366f1);
+  opacity: 0.6;
+  border-radius: 9999px;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary-foreground, #4f46e5);
+  opacity: 0.9;
+}
+
+

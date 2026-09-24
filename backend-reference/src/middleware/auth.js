@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 import { verifyToken, createClerkClient } from "@clerk/backend";
 import User from "../models/User.js";
 
@@ -23,10 +24,13 @@ function getEmailFromClaims(claims) {
 function isAdminEmail(email) {
   if (!email) return false;
   const normalized = email.toLowerCase().trim();
+  const configuredAdmin = process.env.ADMIN_EMAIL ? process.env.ADMIN_EMAIL.toLowerCase().trim() : "";
   return (
     normalized.startsWith("admin") ||
     normalized.includes("admin") ||
-    normalized.endsWith("@admin.psit.ac.in")
+    normalized.endsWith("@admin.psit.ac.in") ||
+    (configuredAdmin && normalized === configuredAdmin) ||
+    normalized === "shauryarajput930@gmail.com"
   );
 }
 
@@ -65,25 +69,47 @@ export async function auth(req, res, next) {
           if (clerkRole === "admin" || isAdminEmail(primaryEmail)) {
             userRole = "admin";
           }
-          userEmail = primaryEmail;
+          if (primaryEmail) userEmail = primaryEmail;
         } catch (clerkFetchErr) {
           console.warn("[auth-debug] Unable to fetch Clerk user details:", clerkFetchErr.message);
         }
       }
 
-      if (userRole !== "admin" && userEmail) {
-        const dbUser = await User.findOne({ email: userEmail.toLowerCase() });
-        if (dbUser && dbUser.role === "admin") {
-          userRole = "admin";
+      let dbUserId = claims.sub;
+      if (userEmail && mongoose.connection.readyState === 1) {
+        try {
+          let dbUser = await User.findOne({ email: userEmail.toLowerCase() });
+          if (!dbUser) {
+            const dummyPassword = await jwt.sign({ clerk: claims.sub }, process.env.JWT_SECRET || "clerk_dummy");
+            dbUser = await User.create({
+              name: userEmail.split("@")[0],
+              email: userEmail.toLowerCase(),
+              password: dummyPassword,
+              role: userRole,
+            });
+          } else {
+            if (dbUser.role === "admin") {
+              userRole = "admin";
+            } else if (userRole === "admin" && dbUser.role !== "admin") {
+              dbUser.role = "admin";
+              await dbUser.save();
+            }
+          }
+          if (dbUser?._id) {
+            dbUserId = dbUser._id.toString();
+          }
+        } catch (dbErr) {
+          console.warn("[auth-debug] MongoDB user sync failed:", dbErr.message);
         }
       }
 
       console.log(
-        `[auth-debug] Verification: Success | ClerkUserID: ${claims.sub} | Role: ${userRole} | Endpoint: ${req.method} ${req.originalUrl}`
+        `[auth-debug] Verification: Success | ClerkUserID: ${claims.sub} | MongoID: ${dbUserId} | Role: ${userRole} | Endpoint: ${req.method} ${req.originalUrl}`
       );
 
       req.user = {
-        id: claims.sub,
+        id: dbUserId,
+        clerkId: claims.sub,
         email: userEmail,
         role: userRole,
       };

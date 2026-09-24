@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { DEFAULT_HOME_BACKGROUND, getBuilding, normalizeHomeBackground } from "@/lib/api";
+import { BUILDINGS_CHANGED_EVENT, DEFAULT_HOME_BACKGROUND, getBuilding, normalizeHomeBackground } from "@/lib/api";
 import type { Building } from "@/lib/mock-data";
 import { CampusMap } from "@/components/campus-map";
 import { BuildingQRCode } from "@/components/qr-code";
@@ -64,8 +64,12 @@ function BuildingDetails() {
         if (!x) { setNF(true); return; }
         setB(x);
         pushRecent(x.id);
-        const list: string[] = JSON.parse(localStorage.getItem("cc_favorites") || "[]");
-        setFav(list.includes(x.id));
+        try {
+          const list: string[] = JSON.parse(localStorage.getItem("cc_favorites") || "[]");
+          setFav(Array.isArray(list) && list.includes(x.id));
+        } catch {
+          setFav(false);
+        }
       });
     };
 
