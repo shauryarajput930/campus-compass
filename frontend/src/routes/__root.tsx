@@ -85,11 +85,9 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-  const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
-
-  if (!publishableKey) {
-    return <div className="flex min-h-screen items-center justify-center px-6 text-center"><p className="max-w-md text-sm text-muted-foreground">Clerk authentication is not configured. Add VITE_CLERK_PUBLISHABLE_KEY to the frontend environment.</p></div>;
-  }
+  const publishableKey =
+    (import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined) ||
+    "pk_test_ZWxlY3RyaWMtaGVycmluZy02NTIxLmNsZXJrLmFjY291bnRzLmRldiQ";
 
   return (
     <ClerkProvider publishableKey={publishableKey}>
