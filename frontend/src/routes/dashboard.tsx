@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import type { Building } from "@/lib/mock-data";
 import { useBuildings } from "@/hooks/use-buildings";
 import { useAuth } from "@/lib/auth-context";
@@ -23,7 +22,7 @@ function Dashboard() {
   const [recs, setRecs] = useState<{ id: string; reason: string }[]>([]);
   const [recsLoading, setRecsLoading] = useState(false);
   const [myReports, setMyReports] = useState<AdminReport[]>([]);
-  const fetchRecs = useServerFn(getAIRecommendations);
+  const fetchRecs = getAIRecommendations;
 
   useEffect(() => {
     let active = true;

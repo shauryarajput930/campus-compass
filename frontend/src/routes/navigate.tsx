@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getAIRouteSuggestions } from "@/lib/ai.functions";
 import { useBuildings } from "@/hooks/use-buildings";
@@ -83,7 +82,7 @@ function NavigatePage() {
   const [routeLoading, setRouteLoading] = useState(false);
   const [routeSuggestions, setRouteSuggestions] = useState<{ destinationId: string; reason: string }[]>([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
-  const fetchRouteSuggestions = useServerFn(getAIRouteSuggestions);
+  const fetchRouteSuggestions = getAIRouteSuggestions;
 
   useEffect(() => {
       if (!params.from && locations[0]) {

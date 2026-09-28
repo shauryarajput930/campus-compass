@@ -1,8 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Outlet, createRootRouteWithContext, useRouter, useRouterState, HeadContent, Scripts } from "@tanstack/react-router";
-import { type ReactNode, useEffect, useState } from "react";
+import { Outlet, createRootRouteWithContext, useRouter, useRouterState } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 
-import appCss from "../styles.css?url";
 import { ThemeProvider } from "@/lib/theme-context";
 import { MotionProvider } from "@/lib/motion-context";
 import { AuthProvider } from "@/lib/auth-context";
@@ -42,46 +41,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Campus Compass — Navigate Your Campus Smarter" },
-      { name: "description", content: "Interactive campus navigation for PSIT. Find buildings, classrooms, labs and facilities with real-time directions." },
-      { name: "author", content: "Campus Compass" },
-      { property: "og:title", content: "Campus Compass — Navigate Your Campus Smarter" },
-      { property: "og:description", content: "Interactive maps, smart search and turn-by-turn campus navigation." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-    links: [
-      { rel: "stylesheet", href: appCss },
-      { rel: "stylesheet", href: "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" },
-      { rel: "icon", href: "/logo.png", type: "image/png" },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700;800&display=swap" },
-    ],
-  }),
-  shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
   errorComponent: ErrorComponent,
 });
-
-const themeInitScript = `(function(){try{var s=localStorage.getItem('cc_theme');var d=s?s==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.classList.toggle('dark',d);}catch(e){document.documentElement.classList.add('dark');}})();`;
-
-function RootShell({ children }: { children: ReactNode }) {
-  return (
-    <html lang="en" className="dark" suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
-        <HeadContent />
-      </head>
-      <body suppressHydrationWarning>{children}<Scripts /></body>
-    </html>
-  );
-}
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
