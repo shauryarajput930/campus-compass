@@ -2,23 +2,33 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import type { Building } from "@/lib/mock-data";
 import { Heart, MapPin } from "lucide-react";
 import { useEffect, useState } from "react";
-import { toggleFavorite } from "@/lib/favorites";
+import { toggleFavorite, FAVORITES_CHANGED_EVENT, getFavorites } from "@/lib/favorites";
 import { motion } from "framer-motion";
 
 export function BuildingCard({ b, index = 0 }: { b: Building; index?: number }) {
   const [fav, setFav] = useState(false);
   const navigate = useNavigate();
+
   useEffect(() => {
-    try {
-      const list: string[] = JSON.parse(localStorage.getItem("cc_favorites") || "[]");
-      setFav(Array.isArray(list) && list.includes(b.id));
-    } catch {
-      setFav(false);
-    }
+    const updateFav = () => {
+      const list = getFavorites();
+      setFav(list.includes(b.id));
+    };
+
+    updateFav();
+    window.addEventListener(FAVORITES_CHANGED_EVENT, updateFav);
+    window.addEventListener("storage", updateFav);
+    return () => {
+      window.removeEventListener(FAVORITES_CHANGED_EVENT, updateFav);
+      window.removeEventListener("storage", updateFav);
+    };
   }, [b.id]);
 
   return (
-    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.04 }}
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.04 }}
       role="link"
       tabIndex={0}
       onClick={() => navigate({ to: "/buildings/$id", params: { id: b.id } })}
@@ -28,7 +38,8 @@ export function BuildingCard({ b, index = 0 }: { b: Building; index?: number }) 
           navigate({ to: "/buildings/$id", params: { id: b.id } });
         }
       }}
-      className="group cursor-pointer overflow-hidden rounded-2xl border border-border bg-card shadow-soft transition hover:-translate-y-1 hover:shadow-glow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+      className="group cursor-pointer overflow-hidden rounded-2xl border border-border bg-card shadow-soft transition hover:-translate-y-1 hover:shadow-glow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+    >
       <Link to="/buildings/$id" params={{ id: b.id }} className="block" onClick={(event) => event.stopPropagation()}>
         <div className="relative h-44 overflow-hidden">
           <img src={b.image} alt={b.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
@@ -44,14 +55,24 @@ export function BuildingCard({ b, index = 0 }: { b: Building; index?: number }) 
             <div className="text-xs text-muted-foreground">{b.department}</div>
             <h3 className="font-display text-base font-semibold">{b.name}</h3>
           </div>
-          <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); const n = toggleFavorite(b.id); setFav(n.includes(b.id)); }}
-            className="grid h-8 w-8 place-items-center rounded-lg border border-border" aria-label="Favourite">
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const next = toggleFavorite(b.id);
+              setFav(next.includes(b.id));
+            }}
+            className="grid h-8 w-8 place-items-center rounded-lg border border-border hover:bg-secondary"
+            aria-label={fav ? "Remove from favourites" : "Add to favourites"}
+          >
             <Heart className={"h-4 w-4 " + (fav ? "fill-red-500 text-red-500" : "")} />
           </button>
         </div>
         <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{b.description}</p>
         <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" /> {b.openingTime}</span>
+          <span className="inline-flex items-center gap-1">
+            <MapPin className="h-3 w-3" /> {b.openingTime}
+          </span>
         </div>
       </div>
     </motion.div>

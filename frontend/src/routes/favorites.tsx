@@ -1,10 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useBuildings } from "@/hooks/use-buildings";
-import type { Building } from "@/lib/mock-data";
 import { BuildingCard } from "@/components/building-card";
 import { Heart } from "lucide-react";
-import { getFavorites } from "@/lib/favorites";
+import { fetchFavorites, getFavorites, FAVORITES_CHANGED_EVENT } from "@/lib/favorites";
+import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/favorites")({
   head: () => ({ meta: [{ title: "Favourites — Campus Compass" }] }),
@@ -12,9 +12,32 @@ export const Route = createFileRoute("/favorites")({
 });
 
 function FavoritesPage() {
+  const { user } = useAuth();
   const b = useBuildings();
-  const [ids, setIds] = useState<string[]>([]);
-  useEffect(() => { setIds(getFavorites()); }, []);
+  const [ids, setIds] = useState<string[]>(() => getFavorites());
+
+  useEffect(() => {
+    let active = true;
+
+    const update = () => {
+      if (active) setIds(getFavorites());
+    };
+
+    update();
+    fetchFavorites().then((fresh) => {
+      if (active) setIds(fresh);
+    });
+
+    window.addEventListener(FAVORITES_CHANGED_EVENT, update);
+    window.addEventListener("storage", update);
+
+    return () => {
+      active = false;
+      window.removeEventListener(FAVORITES_CHANGED_EVENT, update);
+      window.removeEventListener("storage", update);
+    };
+  }, [user]);
+
   const favs = b.filter((x) => ids.includes(x.id));
 
   return (
@@ -26,11 +49,15 @@ function FavoritesPage() {
         <div className="mt-10 rounded-2xl border border-border bg-card p-10 text-center">
           <Heart className="mx-auto h-8 w-8 text-muted-foreground" />
           <p className="mt-3 text-muted-foreground">No favourites yet. Tap the heart on any building to save it here.</p>
-          <Link to="/map" className="mt-4 inline-block btn-hero btn-hero-hover px-4 py-2 text-sm">Open Map</Link>
+          <Link to="/map" className="mt-4 inline-block btn-hero btn-hero-hover px-4 py-2 text-sm">
+            Open Map
+          </Link>
         </div>
       ) : (
         <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {favs.map((x, i) => <BuildingCard key={x.id} b={x} index={i} />)}
+          {favs.map((x, i) => (
+            <BuildingCard key={x.id} b={x} index={i} />
+          ))}
         </div>
       )}
     </div>

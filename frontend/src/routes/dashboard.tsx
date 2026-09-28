@@ -5,7 +5,7 @@ import type { Building } from "@/lib/mock-data";
 import { useBuildings } from "@/hooks/use-buildings";
 import { useAuth } from "@/lib/auth-context";
 import { BuildingCard } from "@/components/building-card";
-import { getFavorites, getRecent } from "@/lib/favorites";
+import { getFavorites, getRecent, fetchFavorites, FAVORITES_CHANGED_EVENT } from "@/lib/favorites";
 import { getAIRecommendations } from "@/lib/ai.functions";
 import { getMyReports, type AdminReport } from "@/lib/admin";
 import { Map, Heart, Clock, Search, Sparkles, Loader2, Flag } from "lucide-react";
@@ -26,9 +26,36 @@ function Dashboard() {
   const fetchRecs = useServerFn(getAIRecommendations);
 
   useEffect(() => {
-    setFavIds(getFavorites());
+    let active = true;
+    const updateFavs = () => {
+      if (active) setFavIds(getFavorites());
+    };
+
+    updateFavs();
     setRecentIds(getRecent());
-    if (user) getMyReports(user.email).then(setMyReports).catch(() => setMyReports([]));
+
+    fetchFavorites().then((fresh) => {
+      if (active) setFavIds(fresh);
+    });
+
+    if (user) {
+      getMyReports(user.email).then((rep) => {
+        if (active) setMyReports(rep);
+      }).catch(() => {
+        if (active) setMyReports([]);
+      });
+    } else {
+      setMyReports([]);
+    }
+
+    window.addEventListener(FAVORITES_CHANGED_EVENT, updateFavs);
+    window.addEventListener("storage", updateFavs);
+
+    return () => {
+      active = false;
+      window.removeEventListener(FAVORITES_CHANGED_EVENT, updateFavs);
+      window.removeEventListener("storage", updateFavs);
+    };
   }, [user]);
 
   useEffect(() => {
