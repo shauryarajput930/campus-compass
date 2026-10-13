@@ -12,6 +12,13 @@
   <b>Explore • Search • Navigate • Discover</b>
 </p>
 
+<p align="center">
+  <a href="ARCHITECTURE.md"><b>🏛️ System Architecture</b></a> •
+  <a href="architecture_diagram.md"><b>📊 Architecture Diagrams & ERD</b></a> •
+  <a href="frontend/README.md"><b>🌐 Frontend Docs</b></a> •
+  <a href="backend-reference/README.md"><b>🛠️ Backend API Docs</b></a>
+</p>
+
 ---
 
 ## ✨ Features
@@ -65,6 +72,7 @@ Quickly find:
 * Login
 * Password reset
 * Google Sign-In
+* Clerk passwordless authentication
 * Protected user features
 
 ### 📝 Feedback & Reports
@@ -149,20 +157,34 @@ Manage:
 ## Frontend
 
 * **React 19**
-* **TanStack Start**
-* **Vite**
-* **Leaflet**
-* **OpenStreetMap**
-* **OSRM**
-* Optional **MapTiler**
-* Optional Google Sign-In
+* **TanStack Start** (SSR & Server Functions)
+* **Vite 8**
+* **Leaflet 1.9** & OpenStreetMap
+* **OSRM** Walking Routing Engine
+* **Tailwind CSS v4** & Radix UI
+* **Clerk React** & Google Sign-In
+* **Google Gemini AI** (via Vercel AI SDK)
 
 ## Backend
 
-* **Node.js**
-* **Express.js**
-* **MongoDB**
-* JWT authentication
+* **Node.js** (ES Modules)
+* **Express.js 4.19**
+* **MongoDB** with Mongoose 8.5
+* **Clerk Backend SDK** & JWT authentication
+* **Multer** file upload pipeline
+
+---
+
+## 📚 Architecture & Documentation
+
+Comprehensive technical documentation is organized across dedicated guides:
+
+| Document | Focus Area |
+| :--- | :--- |
+| 🏛️ **[ARCHITECTURE.md](ARCHITECTURE.md)** | End-to-end system design, sub-second routing algorithms, hybrid Clerk/JWT auth, GIS geofencing, and persistence models. |
+| 📊 **[architecture_diagram.md](architecture_diagram.md)** | Visual Mermaid diagrams: System topology, request flow, dual-mode fallback, auth sequence, ERD, and deployment pipelines. |
+| 🌐 **[Frontend Documentation](frontend/README.md)** | TanStack Start + React 19 app architecture, route tree, Leaflet GIS integration, QR scanner, and offline Demo Mode. |
+| 🛠️ **[Backend API Documentation](backend-reference/README.md)** | Express.js REST API endpoints, Mongoose schema definitions, auto-seed behavior, and Render deployment. |
 
 ---
 
@@ -171,29 +193,39 @@ Manage:
 ```text
 campus-compass/
 │
-├── frontend/
-│   ├── src/
-│   ├── public/
-│   ├── package.json
-│   └── ...
+├── ARCHITECTURE.md          # End-to-end system architecture documentation
+├── architecture_diagram.md  # Mermaid architectural diagrams, flowcharts & ERD
 │
-├── backend-reference/
-│   ├── server.js
-│   ├── routes/
-│   ├── models/
-│   ├── middleware/
+├── frontend/                # React 19 + TanStack Start frontend app
+│   ├── README.md            # Frontend dedicated setup & guide
+│   ├── src/
+│   │   ├── components/      # UI components & Leaflet campus map
+│   │   ├── lib/             # API client, OSRM routing, AI functions, campus config
+│   │   └── routes/          # TanStack Router file-based routes
+│   ├── public/              # Static public assets
 │   ├── package.json
-│   └── ...
+│   └── vite.config.ts
+│
+├── backend-reference/       # Express.js + MongoDB reference API
+│   ├── README.md            # Backend REST API reference & guide
+│   ├── server.js            # Express server entrypoint & CORS pipeline
+│   ├── src/
+│   │   ├── config/          # MongoDB connection & auto-seeder
+│   │   ├── middleware/      # Hybrid Clerk & JWT authentication
+│   │   ├── models/          # Mongoose Schemas (User, Building, Report, Favorite)
+│   │   └── routes/          # Modular REST endpoints
+│   ├── uploads/             # Media storage for building images
+│   └── package.json
 │
 ├── docs/
-│   └── screenshots/
+│   └── screenshots/         # Application visual previews
 │       ├── home.png
 │       ├── map.png
 │       ├── reports.png
 │       └── admin-dashboard.png
 │
-├── netlify.toml
-├── render.yaml
+├── netlify.toml             # Frontend SSR deployment configuration
+├── render.yaml              # Backend Web Service deployment blueprint
 └── README.md
 ```
 
