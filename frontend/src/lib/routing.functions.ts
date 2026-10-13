@@ -1,4 +1,3 @@
-import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 const LatLng = z.object({
@@ -109,97 +108,21 @@ function buildFallback(
   };
 }
 
-export const computeRoute = createServerFn({ method: "POST" })
-  .validator((input: unknown) =>
-    z
-      .object({
-        origin: LatLng,
-        destination: LatLng,
-        mode: z.enum(["WALK", "DRIVE", "BICYCLE", "TWO_WHEELER"]).default("WALK"),
-      })
-      .parse(input),
-  )
-  .handler(async ({ data }): Promise<RouteResult> => {
-    const key = process.env.AI_GATEWAY_KEY;
-    const gmKey = process.env.GOOGLE_MAPS_API_KEY;
-    const directionsUrl = process.env.DIRECTIONS_API_URL || "https://maps.googleapis.com/maps/api/directions/json";
+export async function computeRoute({
+  data,
+}: {
+  data: {
+    origin: { lat: number; lng: number };
+    destination: { lat: number; lng: number };
+    mode?: "WALK" | "DRIVE" | "BICYCLE" | "TWO_WHEELER";
+  };
+}): Promise<RouteResult> {
+  const mode = data.mode || "WALK";
+  return buildFallback(
+    data.origin,
+    data.destination,
+    mode,
+    "Directions computed via campus navigator."
+  );
+}
 
-    // Missing credentials — degrade to a simplified route instead of throwing.
-    if (!key || !gmKey) {
-      return buildFallback(data.origin, data.destination, data.mode, "Directions service unavailable — showing simplified route.");
-    }
-
-    const body = {
-      origin: { location: { latLng: { latitude: data.origin.lat, longitude: data.origin.lng } } },
-      destination: {
-        location: { latLng: { latitude: data.destination.lat, longitude: data.destination.lng } },
-      },
-      travelMode: data.mode,
-      polylineQuality: "HIGH_QUALITY",
-      computeAlternativeRoutes: false,
-      languageCode: "en-US",
-      units: "METRIC",
-    };
-
-    try {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 8000);
-      const res = await fetch(directionsUrl, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${key}`,
-          "X-Connection-Api-Key": gmKey,
-          "Content-Type": "application/json",
-          "X-Goog-FieldMask":
-            "routes.distanceMeters,routes.duration,routes.polyline.encodedPolyline,routes.legs.steps.navigationInstruction,routes.legs.steps.distanceMeters,routes.legs.steps.staticDuration",
-        },
-        body: JSON.stringify(body),
-        signal: controller.signal,
-      }).finally(() => clearTimeout(timer));
-
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        console.error(`Routes API failed [${res.status}]: ${text.slice(0, 300)}`);
-        return buildFallback(
-          data.origin,
-          data.destination,
-          data.mode,
-          `Live directions unavailable (HTTP ${res.status}). Showing simplified route.`,
-        );
-      }
-
-      const json = (await res.json()) as any;
-      const route = json.routes?.[0];
-      if (!route) {
-        return buildFallback(data.origin, data.destination, data.mode, "No route returned by directions service. Showing simplified route.");
-      }
-
-      const steps: RouteStep[] = [];
-      for (const leg of route.legs ?? []) {
-        for (const s of leg.steps ?? []) {
-          steps.push({
-            instruction: s.navigationInstruction?.instructions ?? "Continue",
-            distanceMeters: s.distanceMeters ?? 0,
-            durationSeconds: parseInt(String(s.staticDuration ?? "0s").replace("s", ""), 10) || 0,
-          });
-        }
-      }
-
-      return {
-        distanceMeters: route.distanceMeters ?? 0,
-        durationSeconds: parseInt(String(route.duration ?? "0s").replace("s", ""), 10) || 0,
-        polyline: route.polyline?.encodedPolyline ?? encodePolyline([data.origin, data.destination]),
-        steps: steps.length > 0 ? steps : buildFallback(data.origin, data.destination, data.mode).steps,
-        source: "google",
-      };
-    } catch (err: any) {
-      console.error("Routes API exception:", err?.message || err);
-      const reason = err?.name === "AbortError" ? "timed out" : "unreachable";
-      return buildFallback(
-        data.origin,
-        data.destination,
-        data.mode,
-        `Directions service ${reason}. Showing simplified route.`,
-      );
-    }
-  });

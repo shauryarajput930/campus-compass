@@ -5,7 +5,7 @@ import type { Building } from "@/lib/mock-data";
 import { CampusMap } from "@/components/campus-map";
 import { BuildingQRCode } from "@/components/qr-code";
 import { LocationPinIcon } from "@/components/location-pin-icon";
-import { pushRecent, toggleFavorite } from "@/lib/favorites";
+import { pushRecent, toggleFavorite, isFavorite, FAVORITES_CHANGED_EVENT } from "@/lib/favorites";
 import { Heart, MapPin, Clock, Navigation, Building2, Loader2, Flag } from "lucide-react";
 import { createReport } from "@/lib/admin";
 import { useAuth } from "@/lib/auth-context";
@@ -64,24 +64,23 @@ function BuildingDetails() {
         if (!x) { setNF(true); return; }
         setB(x);
         pushRecent(x.id);
-        try {
-          const list: string[] = JSON.parse(localStorage.getItem("cc_favorites") || "[]");
-          setFav(Array.isArray(list) && list.includes(x.id));
-        } catch {
-          setFav(false);
-        }
+        setFav(isFavorite(x.id));
       });
     };
 
     loadBuilding();
 
     const onChanged = () => loadBuilding();
+    const onFavChanged = () => setFav(isFavorite(id));
+
     window.addEventListener(BUILDINGS_CHANGED_EVENT, onChanged);
+    window.addEventListener(FAVORITES_CHANGED_EVENT, onFavChanged);
     window.addEventListener("storage", onChanged);
 
     return () => {
       active = false;
       window.removeEventListener(BUILDINGS_CHANGED_EVENT, onChanged);
+      window.removeEventListener(FAVORITES_CHANGED_EVENT, onFavChanged);
       window.removeEventListener("storage", onChanged);
     };
   }, [id]);

@@ -5,9 +5,8 @@
 
 [build.environment]
   NODE_VERSION = "20"
-  VITE_CLERK_PUBLISHABLE_KEY = "pk_test_ZWxlY3RyaWMtaGVycmluZy02NTIxLmNsZXJrLmFjY291bnRzLmRldiQ"
 
 [[redirects]]
   from = "/*"
-  to = "/.netlify/functions-internal/server"
+  to = "/index.html"
   status = 200

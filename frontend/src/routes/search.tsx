@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
-import { useServerFn } from "@tanstack/react-start";
 import { useBuildings } from "@/hooks/use-buildings";
 import type { Building } from "@/lib/mock-data";
 import { BuildingCard } from "@/components/building-card";
@@ -28,7 +27,7 @@ function SearchPage() {
   const [aiLoading, setAiLoading] = useState(false);
   const voiceRef = useRef<VoiceSession | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const fetchSuggestions = useServerFn(getAISuggestions);
+  const fetchSuggestions = getAISuggestions;
 
 
   const results = useMemo(() => {

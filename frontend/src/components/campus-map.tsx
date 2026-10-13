@@ -3,7 +3,7 @@ import type { Building } from "@/lib/mock-data";
 import { MAP_TILE_CONFIG, PSIT_CAMPUS_CENTER } from "@/lib/psit-campus-config";
 import { Link } from "@tanstack/react-router";
 import { Heart, Maximize2, Minimize2, Navigation, ZoomIn, ZoomOut, MapPin, Flag } from "lucide-react";
-import { toggleFavorite } from "@/lib/favorites";
+import { toggleFavorite, getFavorites, FAVORITES_CHANGED_EVENT } from "@/lib/favorites";
 
 interface Props {
   buildings: Building[];
@@ -46,7 +46,14 @@ export function CampusMap({
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
-    setFav(JSON.parse(localStorage.getItem("cc_favorites") || "[]"));
+    const updateFavs = () => setFav(getFavorites());
+    updateFavs();
+    window.addEventListener(FAVORITES_CHANGED_EVENT, updateFavs);
+    window.addEventListener("storage", updateFavs);
+    return () => {
+      window.removeEventListener(FAVORITES_CHANGED_EVENT, updateFavs);
+      window.removeEventListener("storage", updateFavs);
+    };
   }, []);
 
   useEffect(() => {

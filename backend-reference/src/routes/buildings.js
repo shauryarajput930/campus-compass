@@ -2,7 +2,9 @@ import { Router } from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import mongoose from "mongoose";
 import Building from "../models/Building.js";
+import Favorite from "../models/Favorite.js";
 import { auth, requireAdmin } from "../middleware/auth.js";
 
 const uploadDir = path.resolve("uploads");
@@ -29,7 +31,10 @@ r.get("/", async (_, res) => {
 
 r.get("/:id", async (req, res) => {
   try {
-    const b = await Building.findOne({ id: req.params.id });
+    let b = await Building.findOne({ id: req.params.id });
+    if (!b && mongoose.Types.ObjectId.isValid(req.params.id)) {
+      b = await Building.findById(req.params.id);
+    }
     if (!b) return res.status(404).json({ error: "Building not found" });
     res.json(b);
   } catch (e) {
@@ -43,13 +48,17 @@ r.post("/", auth, requireAdmin, async (req, res) => {
     delete payload._id;
     if (!payload.id || !payload.id.trim()) {
       payload.id = "b_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
+    } else {
+      payload.id = payload.id.trim();
     }
+
     const validCategories = ["academic", "hostel", "sports", "food", "facility", "admin", "medical"];
     if (!payload.category || !validCategories.includes(String(payload.category).toLowerCase())) {
       payload.category = "academic";
     } else {
       payload.category = String(payload.category).toLowerCase();
     }
+
     const b = await Building.findOneAndUpdate(
       { id: payload.id },
       { $set: payload },
@@ -67,6 +76,7 @@ r.put("/:id", auth, requireAdmin, async (req, res) => {
   try {
     const payload = { ...req.body };
     delete payload._id;
+
     const validCategories = ["academic", "hostel", "sports", "food", "facility", "admin", "medical"];
     if (payload.category) {
       if (!validCategories.includes(String(payload.category).toLowerCase())) {
@@ -75,12 +85,27 @@ r.put("/:id", auth, requireAdmin, async (req, res) => {
         payload.category = String(payload.category).toLowerCase();
       }
     }
-    const b = await Building.findOneAndUpdate(
+
+    let b = await Building.findOneAndUpdate(
       { id: req.params.id },
       { $set: { ...payload, id: req.params.id } },
-      { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
+      { new: true, runValidators: true }
     );
-    console.log(`[DB] Building updated/upserted in MongoDB: ${b.id} (${b.name})`);
+
+    if (!b && mongoose.Types.ObjectId.isValid(req.params.id)) {
+      b = await Building.findByIdAndUpdate(
+        req.params.id,
+        { $set: payload },
+        { new: true, runValidators: true }
+      );
+    }
+
+    if (!b) {
+      // Upsert if not existing
+      b = await Building.create({ ...payload, id: req.params.id });
+    }
+
+    console.log(`[DB] Building updated in MongoDB: ${b.id} (${b.name})`);
     res.json(b);
   } catch (e) {
     console.error(`[DB] Building update failed:`, e.message);
@@ -90,12 +115,26 @@ r.put("/:id", auth, requireAdmin, async (req, res) => {
 
 r.delete("/:id", auth, requireAdmin, async (req, res) => {
   try {
-    const result = await Building.deleteOne({ id: req.params.id });
+    let result = await Building.deleteOne({ id: req.params.id });
+    let deletedId = req.params.id;
+
+    if (result.deletedCount === 0 && mongoose.Types.ObjectId.isValid(req.params.id)) {
+      const doc = await Building.findById(req.params.id);
+      if (doc) {
+        deletedId = doc.id;
+        result = await Building.deleteOne({ _id: req.params.id });
+      }
+    }
+
     if (result.deletedCount === 0) {
       return res.status(404).json({ error: "Building not found" });
     }
-    console.log(`[DB] Building deleted: ${req.params.id}`);
-    res.json({ ok: true, deletedId: req.params.id });
+
+    // Cascade clean favorites for this building in MongoDB
+    await Favorite.deleteMany({ buildingId: deletedId });
+
+    console.log(`[DB] Building deleted from MongoDB: ${deletedId}`);
+    res.json({ ok: true, deletedId });
   } catch (e) {
     console.error(`[DB] Building deletion failed:`, e.message);
     res.status(500).json({ error: e.message });
@@ -106,11 +145,15 @@ r.post("/:id/image", auth, requireAdmin, upload.single("image"), async (req, res
   try {
     if (!req.file) return res.status(400).json({ error: "No file provided" });
     const url = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
-    const b = await Building.findOneAndUpdate(
+    let b = await Building.findOneAndUpdate(
       { id: req.params.id },
       { image: url },
-      { new: true, upsert: true }
+      { new: true }
     );
+    if (!b && mongoose.Types.ObjectId.isValid(req.params.id)) {
+      b = await Building.findByIdAndUpdate(req.params.id, { image: url }, { new: true });
+    }
+    if (!b) return res.status(404).json({ error: "Building not found" });
     res.json({ url, building: b });
   } catch (e) {
     res.status(500).json({ error: e.message });

@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { getHomeBackground, DEFAULT_HOME_BACKGROUND } from "@/lib/api";
 import { getSiteSettings } from "@/lib/admin";
 import type { Building } from "@/lib/mock-data";
-import { stats } from "@/lib/mock-data";
 import { BuildingCard } from "@/components/building-card";
 import { useBuildings } from "@/hooks/use-buildings";
 
@@ -193,10 +192,16 @@ function Landing() {
       <section className="mx-auto -mt-8 max-w-7xl px-4 md:-mt-12">
         <div className="grid grid-cols-2 gap-3 rounded-2xl border border-border bg-card/80 p-4 shadow-soft backdrop-blur-xl md:grid-cols-4">
           {[
-            { label: "Departments", value: stats.departments },
-            { label: "Buildings", value: stats.buildings },
-            { label: "Labs", value: stats.labs },
-            { label: "Students", value: stats.students },
+            { label: "Departments", value: new Set(buildings.map((b) => b.department).filter(Boolean)).size },
+            { label: "Campus Buildings", value: buildings.length },
+            {
+              label: "Labs & Rooms",
+              value: buildings.reduce((acc, b) => {
+                const roomLabs = (b.rooms || []).filter((r) => /lab/i.test(r.type || "")).length;
+                return acc + (roomLabs || (b.category === "academic" ? 4 : 0));
+              }, 0),
+            },
+            { label: "Locations", value: buildings.length },
           ].map((s, i) => (
             <motion.div
               key={s.label}
@@ -205,7 +210,7 @@ function Landing() {
               transition={{ delay: i * 0.08 }}
               className="rounded-xl border border-border/80 bg-secondary/50 p-4 text-center"
             >
-              <div className="font-display text-3xl font-bold text-primary">{s.value.toLocaleString()}+</div>
+              <div className="font-display text-3xl font-bold text-primary">{s.value.toLocaleString()}</div>
               <div className="mt-1 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">{s.label}</div>
             </motion.div>
           ))}

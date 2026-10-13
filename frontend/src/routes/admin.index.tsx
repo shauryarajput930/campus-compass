@@ -45,30 +45,15 @@ function AdminLogin() {
     setError("");
 
     try {
-      if (signInLoaded && signIn) {
-        try {
-          const result = await signIn.create({ strategy: "password", identifier: email, password });
-          if (result.status === "complete" && result.createdSessionId) {
-            await setActive({ session: result.createdSessionId });
-            return;
-          }
-        } catch {
-          /* Fall through to backend API login */
-        }
-      }
-
       const res = await login(email, password);
       if (res.user.role !== "admin") {
-        throw new Error("This account does not have admin privileges.");
+        throw new Error("This account does not have administrator privileges.");
       }
       setSession(res.user, res.token);
       nav({ to: "/admin/dashboard", replace: true });
-    } catch (caught) {
-      const msg = getClerkErrorMessage(caught);
+    } catch (caught: any) {
+      const msg = caught?.response?.data?.error ?? caught?.message ?? "Invalid admin credentials.";
       setError(msg);
-      if (msg.toLowerCase().includes("strategy") || msg.toLowerCase().includes("password") || msg.toLowerCase().includes("identifier") || msg.toLowerCase().includes("not found")) {
-        setMode("clerk");
-      }
     } finally {
       setBusy(false);
     }
@@ -154,7 +139,7 @@ function AdminLogin() {
             This account (<strong className="text-foreground">{userEmail || "current user"}</strong>) is not authorized for the admin dashboard.
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Sign in with an email starting with <code className="text-primary font-mono">admin</code> (e.g. <code className="text-primary font-mono">admin@gmail.com</code>).
+            Please sign in with an authorized administrator account.
           </p>
           <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
             <button onClick={() => nav({ to: "/dashboard", replace: true })} className="btn-hero btn-hero-hover px-4 py-2 text-sm">
@@ -181,7 +166,7 @@ function AdminLogin() {
           </div>
           <div>
             <h1 className="font-display text-xl font-bold">Admin portal</h1>
-            <p className="text-xs text-muted-foreground">Sign in with an admin email account (e.g. admin@gmail.com).</p>
+            <p className="text-xs text-muted-foreground">Sign in with your administrator credentials.</p>
           </div>
         </div>
 
@@ -217,7 +202,7 @@ function AdminLogin() {
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   className="w-full bg-transparent py-2.5 text-sm outline-none"
-                  placeholder="admin@gmail.com"
+                  placeholder="admin@psit.ac.in"
                 />
               </div>
             </label>
@@ -238,16 +223,9 @@ function AdminLogin() {
             {error && (
               <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive space-y-1">
                 <p>{error}</p>
-                <button
-                  type="button"
-                  onClick={() => setMode("clerk")}
-                  className="font-semibold underline hover:text-foreground"
-                >
-                  Click here to sign in with Google or Clerk Auth
-                </button>
               </div>
             )}
-            <button disabled={busy || !signInLoaded} className="btn-hero btn-hero-hover w-full py-3 text-sm">
+            <button disabled={busy} className="btn-hero btn-hero-hover w-full py-3 text-sm disabled:opacity-60">
               {busy ? "Signing in..." : "Sign in to admin portal"}
             </button>
             <div className="flex items-center justify-between text-xs text-primary pt-1">
@@ -266,7 +244,7 @@ function AdminLogin() {
               <p className="mt-1 text-xs text-muted-foreground">We will send a one-time code to your email address.</p>
             </div>
             <label className="block text-sm">
-              <span className="text-xs text-muted-foreground">Admin Gmail address</span>
+              <span className="text-xs text-muted-foreground">Admin email address</span>
               <div className="mt-1 flex items-center gap-2 rounded-lg border border-border bg-background px-3">
                 <Mail className="h-4 w-4 text-muted-foreground" />
                 <input
@@ -276,7 +254,7 @@ function AdminLogin() {
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   className="w-full bg-transparent py-2.5 text-sm outline-none disabled:opacity-60"
-                  placeholder="admin@gmail.com"
+                  placeholder="admin@psit.ac.in"
                 />
               </div>
             </label>
@@ -290,26 +268,26 @@ function AdminLogin() {
                     value={code}
                     onChange={(event) => setCode(event.target.value)}
                     className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none"
-                    placeholder="Enter the code from Gmail"
+                    placeholder="Enter the code"
                   />
                 </label>
                 <label className="block text-sm">
                   <span className="text-xs text-muted-foreground">New password</span>
                   <input
                     required
-                    minLength={8}
+                    minLength={6}
                     type="password"
                     value={newPassword}
                     onChange={(event) => setNewPassword(event.target.value)}
                     className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none"
-                    placeholder="At least 8 characters"
+                    placeholder="At least 6 characters"
                   />
                 </label>
               </>
             )}
             {error && <p className="rounded-lg border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">{error}</p>}
-            <button disabled={busy || !signInLoaded} className="btn-hero btn-hero-hover w-full py-3 text-sm">
-              {busy ? "Please wait..." : resetSent ? "Set new password" : "Send OTP to Gmail"}
+            <button disabled={busy} className="btn-hero btn-hero-hover w-full py-3 text-sm disabled:opacity-60">
+              {busy ? "Please wait..." : resetSent ? "Set new password" : "Send reset code"}
             </button>
             <button type="button" onClick={() => { setMode("login"); setResetSent(false); setError(""); }} className="w-full text-center text-xs text-primary hover:underline">
               Back to admin sign in
@@ -320,4 +298,3 @@ function AdminLogin() {
     </div>
   );
 }
-

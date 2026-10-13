@@ -1,30 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
-import { generateText, NoObjectGeneratedError, Output } from "ai";
-import { z } from "zod";
-
-const SuggestionSchema = z.object({
-  suggestions: z.array(z.string()).max(6),
-});
-
-const RecommendationSchema = z.object({
-  recommendations: z
-    .array(
-      z.object({
-        id: z.string(),
-        reason: z.string(),
-      }),
-    )
-    .max(4),
-});
-
-const RouteSuggestionSchema = z.object({
-  suggestions: z.array(z.object({
-    destinationId: z.string(),
-    reason: z.string(),
-  })).max(4),
-});
-
-interface BuildingLite {
+export interface BuildingLite {
   id: string;
   name: string;
   code: string;
@@ -33,123 +7,134 @@ interface BuildingLite {
   facilities: string[];
 }
 
-async function makeModel() {
-  const key = process.env.AI_API_KEY;
-  if (!key) throw new Error("Missing AI_API_KEY");
-  const { createAiGateway } = await import("./ai-gateway.server");
-  return createAiGateway(key)("google/gemini-2.5-flash");
+export async function getAISuggestions({
+  data,
+}: {
+  data: { query: string; buildings: BuildingLite[] };
+}): Promise<{ suggestions: string[] }> {
+  const query = data.query.toLowerCase().trim();
+  if (!query) return { suggestions: [] };
+
+  const matches = new Set<string>();
+
+  for (const b of data.buildings) {
+    if (b.name.toLowerCase().includes(query)) {
+      matches.add(b.name);
+    }
+    if (b.code.toLowerCase().includes(query)) {
+      matches.add(`${b.code} - ${b.name}`);
+    }
+    if (b.department.toLowerCase().includes(query)) {
+      matches.add(`${b.name} (${b.department})`);
+    }
+    for (const f of b.facilities) {
+      if (f.toLowerCase().includes(query)) {
+        matches.add(`${f} (${b.name})`);
+      }
+    }
+  }
+
+  // If few matches, add close category/name matches
+  if (matches.size < 4) {
+    for (const b of data.buildings) {
+      if (b.category.toLowerCase().includes(query)) {
+        matches.add(`${b.name} - ${b.category}`);
+      }
+    }
+  }
+
+  return { suggestions: Array.from(matches).slice(0, 6) };
 }
 
-export const getAISuggestions = createServerFn({ method: "POST" })
-  .validator((input: unknown) =>
-    z
-      .object({
-        query: z.string().max(200),
-        buildings: z
-          .array(
-            z.object({
-              id: z.string(),
-              name: z.string(),
-              code: z.string(),
-              department: z.string(),
-              category: z.string(),
-              facilities: z.array(z.string()),
-            }),
-          )
-          .max(60),
-      })
-      .parse(input),
-  )
-  .handler(async ({ data }) => {
-    const model = await makeModel();
-    const catalog = data.buildings
-      .map((b) => `${b.code} — ${b.name} (${b.department}) [${b.facilities.slice(0, 4).join(", ")}]`)
-      .join("\n");
-    try {
-      const { output } = await generateText({
-        model,
-        output: Output.object({ schema: SuggestionSchema }),
-        prompt: `You help students navigate the PSIT campus. Given a partial search query, suggest up to 6 short, specific search phrases (each ≤ 40 chars) users likely intend. Prefer real buildings, rooms, labs, or facilities from the catalog. No numbering, no explanation.\n\nCatalog:\n${catalog}\n\nPartial query: "${data.query}"`,
+export async function getAIRecommendations({
+  data,
+}: {
+  data: { recentIds: string[]; buildings: BuildingLite[] };
+}): Promise<{ recommendations: { id: string; reason: string }[] }> {
+  const recentSet = new Set(data.recentIds);
+  const candidates = data.buildings.filter((b) => !recentSet.has(b.id));
+  const pool = candidates.length > 0 ? candidates : data.buildings;
+
+  const categoryReasons: Record<string, string> = {
+    library: "Central quiet study space & resources",
+    canteen: "Food, snacks, and dining area",
+    food: "Campus refreshments & cafeteria",
+    facility: "Essential campus student services",
+    medical: "Health center & first-aid support",
+    academic: "Classrooms, faculty cabins & lecture halls",
+    lab: "Specialized lab equipment & practice spaces",
+    admin: "Administrative queries & official support",
+    sports: "Recreation, grounds & sports complex",
+  };
+
+  const selected: { id: string; reason: string }[] = [];
+  const seenCategories = new Set<string>();
+
+  // Prioritize distinct categories
+  for (const b of pool) {
+    const cat = b.category.toLowerCase();
+    if (!seenCategories.has(cat)) {
+      seenCategories.add(cat);
+      selected.push({
+        id: b.id,
+        reason: categoryReasons[cat] || `Explore facilities at ${b.name}`,
       });
-      return { suggestions: output.suggestions.slice(0, 6) };
-    } catch (e) {
-      if (NoObjectGeneratedError.isInstance(e)) return { suggestions: [] };
-      throw e;
+      if (selected.length >= 4) break;
     }
+  }
+
+  // Fill up if fewer than 4
+  if (selected.length < 4) {
+    for (const b of pool) {
+      if (!selected.some((s) => s.id === b.id)) {
+        const cat = b.category.toLowerCase();
+        selected.push({
+          id: b.id,
+          reason: categoryReasons[cat] || `Recommended campus destination: ${b.name}`,
+        });
+        if (selected.length >= 4) break;
+      }
+    }
+  }
+
+  return { recommendations: selected.slice(0, 4) };
+}
+
+export async function getAIRouteSuggestions({
+  data,
+}: {
+  data: {
+    startName: string;
+    destinationId: string;
+    buildings: BuildingLite[];
+  };
+}): Promise<{ suggestions: { destinationId: string; reason: string }[] }> {
+  const available = data.buildings.filter(
+    (b) => b.id !== data.destinationId && !b.name.includes(data.startName)
+  );
+
+  const priorityCategories = ["food", "canteen", "library", "facility", "medical"];
+  const sorted = [...available].sort((a, b) => {
+    const aPriority = priorityCategories.indexOf(a.category.toLowerCase());
+    const bPriority = priorityCategories.indexOf(b.category.toLowerCase());
+    const aScore = aPriority !== -1 ? aPriority : 99;
+    const bScore = bPriority !== -1 ? bPriority : 99;
+    return aScore - bScore;
   });
 
-export const getAIRecommendations = createServerFn({ method: "POST" })
-  .validator((input: unknown) =>
-    z
-      .object({
-        recentIds: z.array(z.string()).max(20),
-        buildings: z
-          .array(
-            z.object({
-              id: z.string(),
-              name: z.string(),
-              code: z.string(),
-              department: z.string(),
-              category: z.string(),
-              facilities: z.array(z.string()),
-            }),
-          )
-          .max(60),
-      })
-      .parse(input),
-  )
-  .handler(async ({ data }) => {
-    const model = await makeModel();
-    const catalog = data.buildings
-      .map((b) => `- id:${b.id} | ${b.code} ${b.name} (${b.department}, ${b.category})`)
-      .join("\n");
-    const recent = data.recentIds.join(", ") || "(none)";
-    try {
-      const { output } = await generateText({
-        model,
-        output: Output.object({ schema: RecommendationSchema }),
-        prompt: `Recommend up to 4 campus destinations for a student based on their recently visited buildings. Only pick IDs from the catalog. Give a short (≤ 60 char) reason per pick. Return only ids that exist. Prefer variety across categories.\n\nCatalog:\n${catalog}\n\nRecently visited ids: ${recent}`,
-      });
-      const validIds = new Set(data.buildings.map((b) => b.id));
-      return {
-        recommendations: output.recommendations.filter((r) => validIds.has(r.id)).slice(0, 4),
-      };
-    } catch (e) {
-      if (NoObjectGeneratedError.isInstance(e)) return { recommendations: [] };
-      throw e;
-    }
+  const suggestions = sorted.slice(0, 4).map((b) => {
+    let reason = "Useful stop along your campus route";
+    const cat = b.category.toLowerCase();
+    if (cat === "food" || cat === "canteen") reason = "Grab refreshments or quick meal";
+    else if (cat === "library") reason = "Study spot & digital library access";
+    else if (cat === "facility") reason = "Campus student amenity & resting area";
+    else if (cat === "medical") reason = "Health clinic & first aid center";
+
+    return {
+      destinationId: b.id,
+      reason,
+    };
   });
 
-export const getAIRouteSuggestions = createServerFn({ method: "POST" })
-  .validator((input: unknown) =>
-    z.object({
-      startName: z.string().max(120),
-      destinationId: z.string().max(120),
-      buildings: z.array(z.object({
-        id: z.string(),
-        name: z.string(),
-        code: z.string(),
-        department: z.string(),
-        category: z.string(),
-        facilities: z.array(z.string()),
-      })).max(60),
-    }).parse(input),
-  )
-  .handler(async ({ data }) => {
-    const model = await makeModel();
-    const catalog = data.buildings
-      .map((b) => `- id:${b.id} | ${b.code} ${b.name} (${b.department}, ${b.category}) [${b.facilities.slice(0, 4).join(", ")}]`)
-      .join("\n");
-    try {
-      const { output } = await generateText({
-        model,
-        output: Output.object({ schema: RouteSuggestionSchema }),
-        prompt: `Suggest up to 4 useful alternative campus destinations for a student starting at "${data.startName}" and currently choosing "${data.destinationId}". Only use IDs from the catalog. Prefer nearby or contextually useful places such as facilities, food, medical, library, or academic buildings. Give a short practical reason under 60 characters.\n\nCatalog:\n${catalog}`,
-      });
-      const validIds = new Set(data.buildings.map((b) => b.id));
-      return { suggestions: output.suggestions.filter((s) => validIds.has(s.destinationId)).slice(0, 4) };
-    } catch (e) {
-      if (NoObjectGeneratedError.isInstance(e)) return { suggestions: [] };
-      throw e;
-    }
-  });
+  return { suggestions };
+}

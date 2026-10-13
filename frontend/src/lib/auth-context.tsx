@@ -1,17 +1,13 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { useAuth as useClerkAuth, useUser } from "@clerk/clerk-react";
-import { setClerkTokenGetter, type AuthUser } from "./api";
+import { api, setClerkTokenGetter, type AuthUser } from "./api";
+import { fetchFavorites, clearFavorites } from "./favorites";
 
 export function checkIsAdmin(roleMeta: unknown, email: string | undefined): boolean {
   if (roleMeta === "admin") return true;
   if (!email) return false;
   const normalized = email.toLowerCase().trim();
-  return (
-    normalized.startsWith("admin") ||
-    normalized.includes("admin") ||
-    normalized.endsWith("@admin.psit.ac.in") ||
-    normalized === "shauryarajput930@gmail.com"
-  );
+  const configuredAdmin = "admin@psit.ac.in";
+  return normalized === configuredAdmin;
 }
 
 interface AuthCtx {
@@ -19,13 +15,12 @@ interface AuthCtx {
   isLoaded: boolean;
   setSession: (u: AuthUser | null, token: string | null) => void;
   logout: () => void;
+  refreshUser: () => Promise<AuthUser | null>;
 }
 
 const Ctx = createContext<AuthCtx | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { getToken, signOut } = useClerkAuth();
-  const { user: clerkUser, isLoaded } = useUser();
   const [user, setUser] = useState<AuthUser | null>(() => {
     if (typeof window === "undefined") return null;
     try {
@@ -36,63 +31,67 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   });
 
-  useEffect(() => {
-    setClerkTokenGetter(getToken);
-    return () => setClerkTokenGetter(null);
-  }, [getToken]);
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  useEffect(() => {
-    if (!isLoaded) return;
-
-    if (clerkUser) {
-      const email = clerkUser.primaryEmailAddress?.emailAddress || "";
-      const isAdmin = checkIsAdmin(clerkUser.publicMetadata?.role, email);
-
-      const nextUser: AuthUser = {
-        id: clerkUser.id,
-        name: clerkUser.fullName || email || "Campus user",
-        email,
-        role: isAdmin ? "admin" : "user",
-      };
-      setUser(nextUser);
-      localStorage.setItem("cc_user", JSON.stringify(nextUser));
-      getToken().then((token) => {
-        if (token) localStorage.setItem("cc_token", token);
-      });
-    } else {
-      try {
-        const saved = localStorage.getItem("cc_user");
-        if (saved) {
-          const parsed = JSON.parse(saved) as AuthUser;
-          if (parsed?.id && typeof parsed.id === "string" && parsed.id.startsWith("user_")) {
-            setUser(null);
-            localStorage.removeItem("cc_user");
-            localStorage.removeItem("cc_token");
-          }
-        }
-      } catch {
-        setUser(null);
-      }
+  const refreshUser = async (): Promise<AuthUser | null> => {
+    if (typeof window === "undefined") return null;
+    const token = localStorage.getItem("cc_token");
+    if (!token) {
+      setUser(null);
+      setIsLoaded(true);
+      return null;
     }
-  }, [clerkUser, getToken, isLoaded]);
+
+    try {
+      const { data } = await api.get<AuthUser>("/api/auth/me");
+      setUser(data);
+      localStorage.setItem("cc_user", JSON.stringify(data));
+      void fetchFavorites();
+      return data;
+    } catch (err) {
+      console.warn("[auth] /api/auth/me verification failed:", err);
+      setUser(null);
+      localStorage.removeItem("cc_user");
+      localStorage.removeItem("cc_token");
+      clearFavorites();
+      return null;
+    } finally {
+      setIsLoaded(true);
+    }
+  };
+
+  // Verify and hydrate user session against MongoDB on initial mount / refresh
+  useEffect(() => {
+    refreshUser();
+  }, []);
 
   const setSession = (u: AuthUser | null, token: string | null) => {
     setUser(u);
     if (u && token) {
       localStorage.setItem("cc_user", JSON.stringify(u));
       localStorage.setItem("cc_token", token);
+      void fetchFavorites();
     } else {
       localStorage.removeItem("cc_user");
       localStorage.removeItem("cc_token");
+      clearFavorites();
     }
   };
 
   const logout = () => {
     setSession(null, null);
-    void signOut();
+    if (typeof window !== "undefined" && window.Clerk) {
+      try {
+        void (window.Clerk as any).signOut?.();
+      } catch {}
+    }
   };
 
-  return <Ctx.Provider value={{ user, isLoaded, setSession, logout }}>{children}</Ctx.Provider>;
+  return (
+    <Ctx.Provider value={{ user, isLoaded, setSession, logout, refreshUser }}>
+      {children}
+    </Ctx.Provider>
+  );
 }
 
 export function useAuth() {
@@ -100,4 +99,3 @@ export function useAuth() {
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
 }
-

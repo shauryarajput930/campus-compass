@@ -3,7 +3,8 @@ import express from "express";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
-import { connectDB } from "./src/config/db.js";
+import mongoose from "mongoose";
+import { connectDB, isDBConnected } from "./src/config/db.js";
 import authRoutes from "./src/routes/auth.js";
 import buildingRoutes from "./src/routes/buildings.js";
 import searchRoutes from "./src/routes/search.js";
@@ -32,10 +33,6 @@ app.use((req, res, next) => {
   const origin = req.headers.origin;
   const cleanOrigin = origin?.trim().replace(/\/+$/, "");
 
-  console.log(
-    `[cors-debug] method=${req.method} origin=${cleanOrigin || "none"} url=${req.originalUrl || req.url}`
-  );
-
   if (!origin || allowedOrigins.includes(cleanOrigin)) {
     if (cleanOrigin) {
       res.setHeader("Access-Control-Allow-Origin", cleanOrigin);
@@ -55,21 +52,42 @@ app.use((req, res, next) => {
   res.setHeader("Vary", "Origin");
 
   if (req.method === "OPTIONS") {
-    console.log(
-      `[cors-debug] preflight handled url=${req.originalUrl || req.url}`
-    );
     return res.sendStatus(204);
   }
 
   next();
 });
+
 // 2. Body Parser & Static Middleware
 app.use(express.json({ limit: "25mb" }));
 app.use(express.urlencoded({ limit: "25mb", extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// 3. API Routes
-app.get("/", (_, res) => res.json({ ok: true, service: "campus-compass-api" }));
+// 3. Health & Readiness Endpoints
+app.get("/", (_, res) => res.json({ ok: true, service: "campus-compass-api", database: isDBConnected() ? "connected" : "disconnected" }));
+
+app.get("/api/health", (_, res) => {
+  const connected = isDBConnected();
+  return res.status(connected ? 200 : 503).json({
+    status: connected ? "healthy" : "unhealthy",
+    database: connected ? "connected" : "disconnected",
+    readyState: mongoose.connection.readyState,
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// Guard: prevent processing requests if database is disconnected
+app.use("/api", (req, res, next) => {
+  if (req.path === "/health") return next();
+  if (!isDBConnected()) {
+    return res.status(503).json({
+      error: "Database unavailable: MongoDB is not connected. Please verify your database connection.",
+    });
+  }
+  next();
+});
+
+// 4. API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/buildings", buildingRoutes);
 app.use("/api/search", searchRoutes);
@@ -80,12 +98,15 @@ app.use("/api/favorites", favoriteRoutes);
 
 const PORT = process.env.PORT || 5000;
 if (process.env.NODE_ENV !== "test" && !process.env.VERCEL) {
-  connectDB().then(() => {
-    app.listen(PORT, () => console.log(`API running on http://localhost:${PORT}`));
-  });
+  try {
+    await connectDB();
+    app.listen(PORT, () => console.log(`[API] Campus Compass API running on http://localhost:${PORT}`));
+  } catch (err) {
+    console.error("[API] Fatal startup error: Could not connect to MongoDB. Server halted:", err.message);
+    process.exit(1);
+  }
 } else {
-  connectDB();
+  connectDB().catch((err) => console.error("[API] MongoDB connection error:", err.message));
 }
 
 export default app;
-
