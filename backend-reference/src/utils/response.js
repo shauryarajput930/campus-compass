@@ -1,0 +1,25 @@
+/**
+ * Standard API Response Helpers
+ */
+
+export const successResponse = (res, data = {}, message = "Success", statusCode = 200) => {
+  return res.status(statusCode).json({
+    success: true,
+    message,
+    ...data,
+    data,
+  });
+};
+
+export const errorResponse = (res, message = "Internal Server Error", statusCode = 500, error = null) => {
+  return res.status(statusCode).json({
+    success: false,
+    message,
+    error: error || message,
+  });
+};
+
+export default {
+  successResponse,
+  errorResponse,
+};

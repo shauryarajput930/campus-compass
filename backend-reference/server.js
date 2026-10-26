@@ -12,6 +12,8 @@ import adminRoutes from "./src/routes/admin.js";
 import reportRoutes from "./src/routes/reports.js";
 import settingsRoutes from "./src/routes/settings.js";
 import favoriteRoutes from "./src/routes/favorites.js";
+import healthRoutes from "./src/routes/health.js";
+import { successResponse } from "./src/utils/response.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -21,6 +23,7 @@ const rawOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
   "http://127.0.0.1:5173",
+  "https://campus-compass-lovat.vercel.app",
   "https://psit-campus-compass.netlify.app",
   "https://campus-compass.netlify.app",
 ];
@@ -33,13 +36,20 @@ app.use((req, res, next) => {
   const origin = req.headers.origin;
   const cleanOrigin = origin?.trim().replace(/\/+$/, "");
 
-  if (!origin || allowedOrigins.includes(cleanOrigin)) {
+  const isAllowedOrigin =
+    !origin ||
+    allowedOrigins.includes(cleanOrigin) ||
+    (cleanOrigin && /^https:\/\/campus-compass[a-z0-9-]*\.vercel\.app$/.test(cleanOrigin));
+
+  if (isAllowedOrigin) {
     if (cleanOrigin) {
       res.setHeader("Access-Control-Allow-Origin", cleanOrigin);
+      res.setHeader("Access-Control-Allow-Credentials", "true");
+    } else {
+      res.setHeader("Access-Control-Allow-Origin", "*");
     }
   }
 
-  res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader(
     "Access-Control-Allow-Methods",
     "GET, POST, PUT, PATCH, DELETE, OPTIONS"
@@ -66,19 +76,14 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 // 3. Health & Readiness Endpoints
 app.get("/", (_, res) => res.json({ ok: true, service: "campus-compass-api", database: isDBConnected() ? "connected" : "disconnected" }));
 
-app.get("/api/health", (_, res) => {
-  const connected = isDBConnected();
-  return res.status(connected ? 200 : 503).json({
-    status: connected ? "healthy" : "unhealthy",
-    database: connected ? "connected" : "disconnected",
-    readyState: mongoose.connection.readyState,
-    timestamp: new Date().toISOString(),
-  });
-});
+// Dedicated health routes (/health and /api/health)
+app.use(healthRoutes);
+app.use("/api", healthRoutes);
+app.use("/api/health", healthRoutes);
 
 // Guard: prevent processing requests if database is disconnected
 app.use("/api", (req, res, next) => {
-  if (req.path === "/health") return next();
+  if (req.path === "/health" || req.path === "/health/") return next();
   if (!isDBConnected()) {
     return res.status(503).json({
       error: "Database unavailable: MongoDB is not connected. Please verify your database connection.",
@@ -98,13 +103,8 @@ app.use("/api/favorites", favoriteRoutes);
 
 const PORT = process.env.PORT || 5000;
 if (process.env.NODE_ENV !== "test" && !process.env.VERCEL) {
-  try {
-    await connectDB();
-    app.listen(PORT, () => console.log(`[API] Campus Compass API running on http://localhost:${PORT}`));
-  } catch (err) {
-    console.error("[API] Fatal startup error: Could not connect to MongoDB. Server halted:", err.message);
-    process.exit(1);
-  }
+  connectDB().catch((err) => console.error("[DB] MongoDB connection error:", err.message));
+  app.listen(PORT, () => console.log(`[API] Campus Compass API running on http://localhost:${PORT}`));
 } else {
   connectDB().catch((err) => console.error("[API] MongoDB connection error:", err.message));
 }

@@ -70,6 +70,8 @@ function RootComponent() {
 function ChromeShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const bare = pathname.startsWith("/admin");
+  const isLoginPage = pathname === "/login" || pathname.startsWith("/login");
+  const hideFooter = bare || isLoginPage;
   const isAuthPage = ["/login", "/register", "/forgot-password", "/reset-password"].some(
     (p) => pathname === p || pathname.startsWith(p),
   );
@@ -181,7 +183,7 @@ function ChromeShell() {
       <main className="flex-1">
         <Outlet />
       </main>
-      {!bare && <Footer />}
+      {!hideFooter && <Footer />}
     </div>
   );
 }

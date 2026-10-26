@@ -36,8 +36,12 @@ function extractBuildingId(payload: string): string | null {
 
   // 1. Same-origin absolute URL to /buildings/<id>
   try {
-    const url = new URL(trimmed);
-    if (typeof window !== "undefined" && url.origin !== window.location.origin) {
+    const isKnownDomain =
+      url.hostname === "campus-compass-lovat.vercel.app" ||
+      url.hostname.endsWith(".vercel.app") ||
+      url.hostname === "localhost" ||
+      url.hostname === "127.0.0.1";
+    if (typeof window !== "undefined" && url.origin !== window.location.origin && !isKnownDomain) {
       return null; // cross-origin QR is rejected outright
     }
     if (url.protocol !== "http:" && url.protocol !== "https:") return null;

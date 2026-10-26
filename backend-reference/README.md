@@ -4,6 +4,9 @@ RESTful API backend for **Campus Compass**, powering campus building directories
 
 Built with **Node.js (ES Modules)**, **Express.js**, and **MongoDB (Mongoose)**.
 
+**⚡ Live Backend API**: [https://campus-compass-2x8k.onrender.com](https://campus-compass-2x8k.onrender.com)  
+**🚀 Live Frontend App**: [https://campus-compass-lovat.vercel.app/](https://campus-compass-lovat.vercel.app/)
+
 ---
 
 ## 📑 Table of Contents
@@ -321,5 +324,5 @@ services:
 1. Connect your repository to Render.
 2. Select **Web Service** or create from **Blueprint** (`render.yaml`).
 3. Set the Root Directory to `backend-reference`.
-4. Provide your `MONGO_URI`, `CLIENT_ORIGIN` (your Netlify frontend URL), and optionally `CLERK_SECRET_KEY`.
+4. Provide your `MONGO_URI`, `CLIENT_ORIGIN` (`http://localhost:5173,https://campus-compass-lovat.vercel.app`), `APP_URL` (`https://campus-compass-lovat.vercel.app`), and optionally `CLERK_SECRET_KEY`.
 5. Render will automatically execute health checks against `/` and deploy the service with HTTPS.

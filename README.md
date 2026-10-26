@@ -13,6 +13,8 @@
 </p>
 
 <p align="center">
+  <a href="https://campus-compass-lovat.vercel.app/"><b>🚀 Live Web App</b></a> •
+  <a href="https://campus-compass-2x8k.onrender.com"><b>⚡ Live Backend API</b></a> •
   <a href="ARCHITECTURE.md"><b>🏛️ System Architecture</b></a> •
   <a href="architecture_diagram.md"><b>📊 Architecture Diagrams & ERD</b></a> •
   <a href="frontend/README.md"><b>🌐 Frontend Docs</b></a> •
@@ -413,35 +415,28 @@ GET   /api/admin/analytics
 
 # 🌐 Deployment
 
-## Frontend → Netlify
+## Frontend → Vercel / Netlify
 
-The frontend can be deployed to **Netlify**.
+The frontend is deployed to **Vercel** at [https://campus-compass-lovat.vercel.app/](https://campus-compass-lovat.vercel.app/) (and can also be hosted on **Netlify**).
 
-The repository includes:
+The repository includes deployment configurations:
 
 ```text
+vercel.json
 netlify.toml
 ```
 
-Configure the following environment variable in Netlify:
+Configure the following environment variable in Vercel / Netlify:
 
 ```env
-VITE_API_URL=https://your-render-api.onrender.com
+VITE_API_URL=https://campus-compass-2x8k.onrender.com
 ```
-
-For example:
-
-```env
-VITE_API_URL=https://campus-compass-o69z.onrender.com
-```
-
-After changing environment variables, redeploy the site.
 
 ---
 
 ## Backend → Render
 
-The backend can be deployed to **Render**.
+The backend is deployed to **Render** at [https://campus-compass-2x8k.onrender.com](https://campus-compass-2x8k.onrender.com).
 
 The repository includes:
 
@@ -467,8 +462,8 @@ Set the required environment variables in Render:
 ```env
 MONGO_URI=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret
-CLIENT_ORIGIN=https://your-netlify-site.netlify.app
-APP_URL=https://your-netlify-site.netlify.app
+CLIENT_ORIGIN=http://localhost:5173,https://campus-compass-lovat.vercel.app
+APP_URL=https://campus-compass-lovat.vercel.app
 GOOGLE_CLIENT_ID=your_google_client_id
 ```
 

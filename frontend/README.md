@@ -4,6 +4,9 @@ Modern, high-performance web application providing interactive GIS campus naviga
 
 Built with **React 19**, **TanStack Start**, **Vite 8**, and **Leaflet**.
 
+**🚀 Live Site**: [https://campus-compass-lovat.vercel.app/](https://campus-compass-lovat.vercel.app/)  
+**⚡ Backend API**: [https://campus-compass-2x8k.onrender.com](https://campus-compass-2x8k.onrender.com)
+
 ---
 
 ## 📑 Table of Contents
@@ -220,29 +223,30 @@ Leave `VITE_API_URL` blank or commented out in `.env`:
 
 ---
 
-## 🌐 Deployment (Netlify)
+## 🌐 Deployment (Vercel & Netlify)
 
-The frontend is configured for deployment on **Netlify** via `netlify.toml`:
+The frontend is deployed to **Vercel** at [https://campus-compass-lovat.vercel.app/](https://campus-compass-lovat.vercel.app/) (and can also be hosted on **Netlify**).
 
-```toml
-[build]
-  base = "frontend"
-  command = "npm run build"
-  publish = "dist"
+### Vercel Deployment
+The repository includes `vercel.json` configured for SPA routing and build output:
 
-[build.environment]
-  NODE_VERSION = "20"
-
-[[redirects]]
-  from = "/*"
-  to = "/.netlify/functions-internal/server"
-  status = 200
+```json
+{
+  "buildCommand": "npm --prefix frontend run build",
+  "outputDirectory": "frontend/dist",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
 ```
 
-### Steps:
-1. Link your GitHub repository in Netlify.
-2. Set the base directory to `frontend`.
-3. Add the following environment variable in the Netlify dashboard:
-   - `VITE_API_URL`: Your production backend URL (e.g. `https://campus-compass-api.onrender.com`).
-   - `VITE_CLERK_PUBLISHABLE_KEY`: Your production Clerk key.
-4. Deploy the site. Browser location services will work automatically because Netlify provides HTTPS by default.
+### Environment Variables
+Configure the following environment variables in the Vercel or Netlify project settings:
+- `VITE_API_URL`: `https://campus-compass-2x8k.onrender.com`
+- `VITE_CLERK_PUBLISHABLE_KEY`: Your production Clerk key.
+- `VITE_GOOGLE_MAPS_BROWSER_KEY`: Your Google Maps key.
+
+Browser location services work automatically over HTTPS.
